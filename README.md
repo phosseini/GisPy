@@ -10,3 +10,7 @@ GIS = Referential Cohesion + Deep Cohesion + (LSA Verb Overlap - WordNet Verb Ov
 * **Index name:** **LSA verb Overlap (SMCAUSlsa)** and **WordNet Verb Overlap (SMCAUSwn)**
 * **Status:** under implementation
 * **Explanation:** "A central dimension of forming a coherent situation model is the extent to which actions, as represented by verbs, are related to one another across a text. FTT suggests that abstract, rather than concrete verb overlap might help active readers construct gist situation models. Coh-Metrix uses **SMCAUSlsa** and **SMCAUSwn** to assess the extent to which verbs (actions) are interconnected across a text."
+
+
+**Technical details:**
+* In input text to the pipeline, one assumption is that paragraphs are separated by `\n`.
