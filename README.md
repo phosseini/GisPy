@@ -15,4 +15,4 @@ Our end goal is to have a metric that gives us an understanding of the potential
 
 **Technical details:**
 * In input text to the pipeline, one assumption is that paragraphs are separated by `\n`.
-* In input string, documents are separated by '\n\n'.
+* In input string, documents are separated by `\n\n`.
