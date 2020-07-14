@@ -1,3 +1,4 @@
+from utils import find_mrc_word
 from nltk.corpus import wordnet as wn
 
 
@@ -53,3 +54,24 @@ class GIST:
                 # assigning the lowest score to words for which we can't compute the score
                 scores.append(0)
         return sum(scores) / len(scores)
+
+    def compute_WRDCNCc_WRDIMGc(self):
+        """
+        computing the document concreteness and imageability
+        :return:
+        """
+        conc_score = 0
+        img_score = 0
+        for index, row in self.doc.iterrows():
+            records = find_mrc_word(row['token_text'], row['token_pos'])
+
+            # there might be more than one record for the very word with its POS tag
+            if len(records) > 0:
+                word_conc_score = 0
+                word_img_score = 0
+                for record in records:
+                    word_conc_score += record.conc
+                    word_img_score += record.imag
+                conc_score += (word_conc_score / len(records))
+                img_score += (word_img_score / len(records))
+        return conc_score / len(self.doc), img_score / len(self.doc)
