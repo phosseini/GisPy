@@ -2,8 +2,10 @@ import torch
 import copy
 import itertools
 import statistics
+import pandas as pd
 import torch.nn as nn
 
+from scipy.stats import zscore
 from transformers import AutoModel, AutoTokenizer
 from nltk.corpus import wordnet as wn
 
@@ -167,3 +169,42 @@ class GIST:
             scores.append(cosine(pair[0], pair[1]).item())
 
         return statistics.mean(scores)
+
+
+class GIS:
+    def __init__(self):
+        pass
+
+    def score(self, df):
+        """
+        df is a dataframe that contain relevant coh-metrix indices
+        :param df:
+        :return:
+        """
+        # Referential Cohesion (PCREFz)
+        # Deep Cohesion (PCDCz)
+        # Verb Overlap LSA (SMCAUSlsa)
+        # Verb Overlap WordNet (SMCAUSwn)
+        # Word Concreteness (PCCNCz)
+        # Imageability for Content Words (WRDIMGc)
+        # Hypernymy for Nouns and Verbs (WRDHYPnv)
+
+        # computing z-scores
+        df["zSMCAUSlsa"] = zscore(df['SMCAUSlsa'])
+        df["zSMCAUSwn"] = zscore(df['SMCAUSwn'])
+        df["zWRDIMGc"] = zscore(df['WRDIMGc'])
+        df["zWRDHYPnv"] = zscore(df['WRDHYPnv'])
+
+        # computing the Gist Inference Score (GIS)
+        for idx, row in df.iterrows():
+            PCREFz = row["PCREFz"]
+            PCDCz = row["PCDCz"]
+            PCCNCz = row["PCCNCz"]
+            zSMCAUSlsa = row["zSMCAUSlsa"]
+            zSMCAUSwn = row["zSMCAUSwn"]
+            zWRDIMGc = row["zWRDIMGc"]
+            zWRDHYPnv = row["zWRDHYPnv"]
+            gis = PCREFz + PCDCz + (zSMCAUSlsa - zSMCAUSwn) - PCCNCz - zWRDIMGc - zWRDHYPnv
+            df.loc[idx, "GIS"] = gis
+
+        return df
