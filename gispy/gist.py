@@ -177,9 +177,10 @@ class GIS:
 
     def score(self, df):
         """
-        df is a dataframe that contain relevant coh-metrix indices
-        :param df:
-        :return:
+        computing Gist Inference Score (GIS) based on the following paper:
+        https://link.springer.com/article/10.3758/s13428-019-01284-4
+        :param df: a dataframe that contains coh-metrix indices
+        :return: the input dataframe with an extra column named "GIS" that stores gist inference score
         """
         # Referential Cohesion (PCREFz)
         # Deep Cohesion (PCDCz)
