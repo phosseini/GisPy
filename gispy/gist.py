@@ -173,15 +173,20 @@ class GIST:
 
 class GIS:
     def __init__(self):
-        pass
+        self.wolfe_mean_sd = {'SMCAUSlsa': {'mean': 0.097, 'sd': 0.04},
+                              'SMCAUSwn': {'mean': 0.553, 'sd': 0.096},
+                              'WRDIMGc': {'mean': 410.346, 'sd': 24.994},
+                              'WRDHYPnv': {'mean': 1.843, 'sd': 0.26}}
 
-    def score(self, df):
+    def score(self, df, wolfe=False):
         """
         computing Gist Inference Score (GIS) based on the following paper:
         https://link.springer.com/article/10.3758/s13428-019-01284-4
         :param df: a dataframe that contains coh-metrix indices
+        :param wolfe: whether using wolfe's mean and standard deviation for computing z-score
         :return: the input dataframe with an extra column named "GIS" that stores gist inference score
         """
+
         # Referential Cohesion (PCREFz)
         # Deep Cohesion (PCDCz)
         # Verb Overlap LSA (SMCAUSlsa)
@@ -190,11 +195,22 @@ class GIS:
         # Imageability for Content Words (WRDIMGc)
         # Hypernymy for Nouns and Verbs (WRDHYPnv)
 
+        # Z-Score(X) = (X-μ)/σ
+        # X: a single raw data value
+        # μ: population mean
+        # σ: population standard deviation
+
+        def z_score(df_col, params):
+            if wolfe:
+                return df_col.map(lambda x: (x - params['mean']) / params['sd'])
+            else:
+                return zscore(df_col)
+
         # computing z-scores
-        df["zSMCAUSlsa"] = zscore(df['SMCAUSlsa'])
-        df["zSMCAUSwn"] = zscore(df['SMCAUSwn'])
-        df["zWRDIMGc"] = zscore(df['WRDIMGc'])
-        df["zWRDHYPnv"] = zscore(df['WRDHYPnv'])
+        df["zSMCAUSlsa"] = z_score(df['SMCAUSlsa'], self.wolfe_mean_sd['SMCAUSlsa'])
+        df["zSMCAUSwn"] = z_score(df['SMCAUSwn'], self.wolfe_mean_sd['SMCAUSwn'])
+        df["zWRDIMGc"] = z_score(df['WRDIMGc'], self.wolfe_mean_sd['WRDIMGc'])
+        df["zWRDHYPnv"] = z_score(df['WRDHYPnv'], self.wolfe_mean_sd['WRDHYPnv'])
 
         # computing the Gist Inference Score (GIS)
         for idx, row in df.iterrows():
