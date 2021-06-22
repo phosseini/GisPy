@@ -47,7 +47,7 @@ def convert_docs(docs_string):
     """
 
     nlp = spacy.load('en_core_web_sm')
-    nlp.add_pipe(nlp.create_pipe('sentencizer'))
+    nlp.add_pipe('sentencizer')
 
     df_docs = pd.DataFrame(columns=["d_id", "p_id", "sen_id", "token_id", "token_text", "token_lemma", "token_pos"])
 
@@ -67,7 +67,7 @@ def convert_docs(docs_string):
                                               "p_id": p_id,
                                               "sen_id": s_id,
                                               "token_id": t_id,
-                                              "token_text": token.string.strip(),
+                                              "token_text": token.text.strip(),
                                               "token_lemma": token.lemma_.strip(),
                                               "token_pos": token.pos_},
                                              ignore_index=True)

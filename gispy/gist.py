@@ -15,8 +15,8 @@ from utils import find_mrc_word
 class GIST:
     def __init__(self, doc):
         self.doc = doc
-        self.tokenizer = AutoTokenizer.from_pretrained('bert-large-uncased')
-        self.model = AutoModel.from_pretrained('bert-large-uncased')
+        self.tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+        self.model = AutoModel.from_pretrained('bert-base-uncased')
 
     def compute_SMCAUSwn(self):
         """
