@@ -7,6 +7,20 @@ Our end goal is to have a metric that gives us an understanding of the potential
 
 `GIS = Referential Cohesion + Deep Cohesion + (LSA Verb Overlap - WordNet Verb Overlap) - Word Concreteness - Imageability - Hypernymy Nouns & Verbs`
 
+* **Index name:** **Text Easability PC Referential cohesion (PCREFz)**
+* **Status:** not implemented
+* **Explanation:** 
+* **Implementation:**
+
+---
+
+* **Index name:** **Text Easability PC Deep cohesion (PCDCz)**
+* **Status:** not implemented
+* **Explanation:** 
+* **Implementation:**
+
+---
+
 * **Index name:** **LSA verb Overlap (SMCAUSlsa)** and **WordNet Verb Overlap (SMCAUSwn)**
 * **Status:** implemented
 * **Explanation:** "A central dimension of forming a coherent situation model is the extent to which actions, as represented by verbs, are related to one another across a text. FTT suggests that abstract, rather than concrete verb overlap might help active readers construct gist situation models. Coh-Metrix uses **SMCAUSlsa** and **SMCAUSwn** to assess the extent to which verbs (actions) are interconnected across a text."
