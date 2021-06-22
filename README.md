@@ -8,9 +8,9 @@ Our end goal is to have a metric that gives us an understanding of the potential
 `GIS = Referential Cohesion + Deep Cohesion + (LSA Verb Overlap - WordNet Verb Overlap) - Word Concreteness - Imageability - Hypernymy Nouns & Verbs`
 
 * **Index name:** **LSA verb Overlap (SMCAUSlsa)** and **WordNet Verb Overlap (SMCAUSwn)**
-* **Status:** partially implemented
+* **Status:** implemented
 * **Explanation:** "A central dimension of forming a coherent situation model is the extent to which actions, as represented by verbs, are related to one another across a text. FTT suggests that abstract, rather than concrete verb overlap might help active readers construct gist situation models. Coh-Metrix uses **SMCAUSlsa** and **SMCAUSwn** to assess the extent to which verbs (actions) are interconnected across a text."
-* **Implementation:** *SMCAUSlsa:* in the LSA algorithm, the cosine of two LSA vectors corresponding to the given pair of verbs is used to represent the degree of overlap of the two verbs. *SMCAUSwn:* In the WordNet algorithm, the overlap is a binary representation: `1` when two verbs are in the same synonym set and `0` otherwise.
+* **Implementation:** *SMCAUSlsa:* in the LSA algorithm, the cosine of two LSA vectors corresponding to the given pair of verbs is used to represent the degree of overlap between two verbs. *SMCAUSwn:* In the WordNet algorithm, the overlap is a binary representation: `1` when two verbs are in the same synonym set and `0` otherwise. To improve the SMCAUSlsa, we implemented a new metric called **SMCAUSlme** that leverages word embedding from pre-trained language models (e.g., BERT) instead of LSA vectors to compute the overlap among verbs in a document. By default, SMCAUSlme computes the mean of cosine similarity among all pairs of VERBs in a document. However, it can also receive a list of Part of Speech (POS) tags instead of just VERBs and compute the similarity among all pairs of words with those POS tags.
 
 ---
 
