@@ -3,6 +3,7 @@ import copy
 import itertools
 import statistics
 import pandas as pd
+import numpy as np
 import torch.nn as nn
 
 from scipy.stats import zscore
@@ -15,8 +16,8 @@ from utils import find_mrc_word
 class GIST:
     def __init__(self, doc):
         self.doc = doc
-        self.tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
-        self.model = AutoModel.from_pretrained('bert-base-uncased')
+        self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+        self.model = AutoModel.from_pretrained("bert-base-uncased", output_hidden_states=True)
 
     def compute_SMCAUSwn(self):
         """
@@ -105,31 +106,7 @@ class GIST:
 
         torch.set_grad_enabled(False)
 
-        doc_string = ' '.join(doc_context)
-        tokens = self.tokenizer.tokenize(doc_string)
-
-        # This is not sufficient for the model, as it requires integers as input,
-        # not a problem, let's convert tokens to ids.
-        tokens_ids = self.tokenizer.convert_tokens_to_ids(tokens)
-
-        # Add the required special tokens
-        tokens_ids = self.tokenizer.build_inputs_with_special_tokens(tokens_ids)
-
-        # We need to convert to a Deep Learning framework specific format, let's use PyTorch for now.
-        tokens_pt = torch.tensor([tokens_ids])
-
-        # Now we're ready to go through BERT with out input
-        outputs, pooled = self.model(tokens_pt)
-
-        # creating a list of tokens and their embeddings
-        last_hidden_states = outputs[0]
-        token_embeddings = []
-        i = 0
-        while i < len(tokens):
-            token_embeddings.append([tokens[i], last_hidden_states[i + 1]])
-            i += 1
-
-        assert len(tokens) == len(token_embeddings)
+        tokens, token_embeddings = self.get_token_embeddings(' '.join(doc_context), layers=[-1])
 
         i = 0
         i_token = 0
@@ -137,20 +114,20 @@ class GIST:
         while i < len(df):
             if df.iloc[i]['token_pos'] in pos_tags:
                 # true, if there's no sub-token
-                if df.iloc[i]['token_text'].lower() == token_embeddings[i_token][0].lower():
-                    verb_embeddings.append(token_embeddings[i_token][1])
+                if df.iloc[i]['token_text'].lower() == tokens[i_token].lower():
+                    verb_embeddings.append(token_embeddings[i_token])
                     i += 1
                     i_token += 1
-                # it means that there are sub-tokens
+                # it means that there are sub-tokens (a token is broken down to multiple tokens by tokenizer)
                 else:
                     # if you want to check the tokens
                     # print(df.iloc[i]['token_text'], tokens[i_token])
-                    tensors = [token_embeddings[i_token][1]]
+                    tensors = [token_embeddings[i_token]]
                     j = copy.deepcopy(i_token) + 1
 
                     # getting embeddings of all sub-tokens of current token and then computing their mean
                     while j < len(tokens) and '#' in tokens[j]:
-                        tensors.append(token_embeddings[j][1])
+                        tensors.append(token_embeddings[j])
                         j += 1
                     verb_embeddings.append(torch.mean(torch.stack(tensors), dim=0))
                     i += 1
@@ -169,6 +146,31 @@ class GIST:
             scores.append(cosine(pair[0], pair[1]).item())
 
         return statistics.mean(scores)
+
+    def get_token_embeddings(self, doc: str, layers: list):
+        layers = [-4, -3, -2, -1] if layers is None else layers
+
+        encoded = self.tokenizer.encode_plus(doc, return_tensors="pt")
+
+        tokens = []
+        for idx in encoded['input_ids'][0]:
+            tokens.append(self.tokenizer.decode(idx))
+
+        tokens = tokens[1:-1]
+
+        with torch.no_grad():
+            output = self.model(**encoded)
+
+        # get all hidden states
+        states = output.hidden_states
+
+        # stack and sum all requested layers
+        # And, we exclude the first and last tensors since they're embeddings of special tokens: [CLS] and [SEP]
+        output = torch.stack([states[i] for i in layers]).sum(0).squeeze()[1:-1]
+
+        assert len(output) == len(tokens)
+
+        return tokens, output
 
 
 class GIS:
