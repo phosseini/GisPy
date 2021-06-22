@@ -17,7 +17,15 @@ Our end goal is to have a metric that gives us an understanding of the potential
 * **Index name:** **Hypernymy for Nouns and Verbs (WRDHYPnv)**
 * **Status:** implemented
 * **Explanation:** "One type of relation in WordNet lexicon is the hypernym relation. Hypernym count is defined as the number of levels in a conceptual taxonomic hierarchy that is above (superordinate to) a word. For example, table (as an object) has seven hypernym levels: seat -> furniture -> furnishings -> instrumentality -> artifact -> object -> entity. A word having many hypernym levels tends to be more abstract. A lower value reflects an overall use of less specific words, while a higher value reflects an overall use of more specific words."
-* **Implementation:** we list all NOUNs and VERBs in a document. Then for each NOUN/VERB, we find all synsets in WordNet to which the NOUN/VERB belongs to. For each synset, using the `hypernym_paths` we find the path length of the synset to its root hypernym. Since each NOUN/VERB may belong to more than one synset even with the same Part of Speech (POS), we repeat the previous step for all the synsets to which a NOUN/VERB belongs to. Finally, we compute the mean/average of all the path length values.
+* **Implementation:** we list all NOUNs and VERBs in a document. Then for each NOUN/VERB, we find all synsets in WordNet to which the NOUN/VERB belongs. For each synset, using the `hypernym_paths` we find the path length of the synset to its root hypernym. Since each NOUN/VERB may belong to more than one synset even with the same Part of Speech (POS), we repeat the previous step for all the synsets to which a NOUN/VERB belongs. Finally, we compute the mean/average of all the path length values.
+
+---
+
+* **Index name:** **Concreteness for content words (WRDCNCc)** and **Imagability for content words (WRDIMGc)**
+* **Status:** implemented
+* **Explanation:** 
+* **Implementation:**
+
 
 **Technical details:**
 * In input text to the pipeline, one assumption is that paragraphs are separated by `\n`.
