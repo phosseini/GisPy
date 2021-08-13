@@ -9,14 +9,14 @@ Our end goal is to have a metric that gives us an understanding of the potential
 
 * **Index name:** **Text Easability PC Referential cohesion (PCREFz)**
 * **Status:** not implemented
-* **Explanation:** 
+* **Explanation:** "A text with high referential cohesion contains words and ideas that overlap across sentences and the entire text, forming explicit threads that connect the text for the reader. Low-cohesion text is typically more difficult to process because there are fewer connections that tie the ideas together for the reader."
 * **Implementation:**
 
 ---
 
 * **Index name:** **Text Easability PC Deep cohesion (PCDCz)**
 * **Status:** not implemented
-* **Explanation:** 
+* **Explanation:** "This dimension reflects the degree to which the text contains causal and intentional connectives when there are causal and logical relationships within the text. These connectives help the reader form a deeper and more coherent understading of the causal events, processes, and actions in the text. When a text contains many relationships but does not contain those connectives, the reader must infer the relationships between the ideas in the text. If the text is high in deep cohesion, then those relationships and global cohesion are more explicit."
 * **Implementation:**
 
 ---
