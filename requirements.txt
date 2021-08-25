@@ -1,0 +1,8 @@
+transformers==4.7.0
+scipy==1.7.0
+pandas==1.1.0
+spacy==3.0.6
+torch==1.9.0
+numpy==1.19.1
+SQLAlchemy==1.4.18
+nltk==3.5
