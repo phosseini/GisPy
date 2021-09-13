@@ -1,3 +1,5 @@
+import re
+
 import spacy
 import pandas as pd
 
@@ -39,22 +41,25 @@ class DataReader:
         return docs
 
 
-def convert_docs(docs_string):
+def convert_docs(df_raw_docs):
     """
-    converting docs tokens
-    :param docs_string: a string in which documents are separated by '\n\n' and paragraphs by '\n'
+    converting string documents to tokens with meta-information (e.g. POS tags)
+    :param df_raw_docs: a data frame with two columns: ['d_id', 'text']
     :return:
     """
+
+    def normalize_text(input_text):
+        input_text = re.sub(r'\n+', '\n', input_text).strip()
+        return input_text
 
     nlp = spacy.load('en_core_web_sm')
     nlp.add_pipe('sentencizer')
 
-    df_docs = pd.DataFrame(columns=["d_id", "p_id", "sen_id", "token_id", "token_text", "token_lemma", "token_pos"])
+    df_docs = pd.DataFrame(columns=["d_id", "p_id", "s_id", "token_id", "token_text", "token_lemma", "token_pos"])
 
-    # documents and paragraphs should be separated by '\n\n' and '\n', respectively.
-    documents = docs_string.split("\n\n")
-    d_id = 0
-    for doc in documents:
+    for idx, row in df_raw_docs.iterrows():
+        d_id = row['d_id']
+        doc = normalize_text(row['text'])
         paragraphs = doc.split('\n')
         p_id = 0
         for paragraph in nlp.pipe(paragraphs, disable=["parser"]):
@@ -65,7 +70,7 @@ def convert_docs(docs_string):
                 for token in tokens:
                     df_docs = df_docs.append({"d_id": d_id,
                                               "p_id": p_id,
-                                              "sen_id": s_id,
+                                              "s_id": s_id,
                                               "token_id": t_id,
                                               "token_text": token.text.strip(),
                                               "token_lemma": token.lemma_.strip(),
@@ -74,6 +79,5 @@ def convert_docs(docs_string):
                     t_id += 1
                 s_id += 1
             p_id += 1
-        d_id += 1
 
     return df_docs
