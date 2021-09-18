@@ -1,4 +1,4 @@
-# Gist Implementation in Python
+# GisPy: Gist Implementation in Python
 This repository is dedicated to the implementation of gist in Python. 
 
 **What is Gist?** Based on Fuzzy-trace theory (FTT), when individuals read a piece of text, there are two mental representations encoded in parallel in their mind, including gist and verbatim. While verbatim is related to surface-level information in the text, gist represents the bottom-meaning and underlying semantics of it. Inspired by the Gist Inference Score (GIS), we leverage text analysis and Natural Language Processing (NLP) tools to implement and improve GIS in Python. 
