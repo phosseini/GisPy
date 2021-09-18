@@ -5,7 +5,16 @@ This repository is dedicated to the implementation of gist in Python.
 
 Our end goal is to have a metric that gives us an understanding of the potential and capacity of a piece of text in creating a coherent gist representation in the human brain/mind.
 
-`GIS = Referential Cohesion + Deep Cohesion + (LSA Verb Overlap - WordNet Verb Overlap) - Word Concreteness - Imageability - Hypernymy Nouns & Verbs`
+### How to run Gispy
+* First, put all text documents separately as `.txt` files (one document per file) in the `/data/documents` folder.
+
+### Gist Inference Score (GIS) formula
+
+```
+GIS = Referential Cohesion + Deep Cohesion + (LSA Verb Overlap - WordNet Verb Overlap) - Word Concreteness - Imageability - Hypernymy Nouns & Verbs
+```
+
+### List of indices
 
 | Index name | Status | Explanation | Implementation Detail |
 | :----: | :----: | :---- | :---- |
@@ -20,6 +29,3 @@ Our end goal is to have a metric that gives us an understanding of the potential
 :x: &nbsp; Not implemented yet
 
 :cyclone: &nbsp; Work in progress
-
-**Technical details:**
-* In input text to the pipeline, one assumption is that paragraphs and documents are separated by `\n` and `\n\n`, respectively.
