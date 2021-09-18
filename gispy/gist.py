@@ -8,16 +8,17 @@ import numpy as np
 import pandas as pd
 import torch.nn as nn
 
-from utils import get_causal_cues
-
-from scipy.stats import zscore
-from transformers import AutoModel, AutoTokenizer
-from nltk.corpus import wordnet as wn
-from os import listdir
-from os.path import isfile, join
-
 from utils import find_mrc_word
+from utils import get_causal_cues
 from data_reader import convert_docs
+
+from os import listdir
+from scipy.stats import zscore
+from os.path import isfile, join
+from nltk.corpus import wordnet as wn
+from transformers import AutoModel, AutoTokenizer
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 class GIST:
@@ -25,12 +26,12 @@ class GIST:
         self.docs_path = docs_path
 
         # since documents may be longer than BERT's maximum length, we use Longformer model with maximum length of 4096
-        # TODO: we need to also explore other models for finding vector representation of tokens in documents
         # self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         # self.model = AutoModel.from_pretrained("bert-base-uncased", output_hidden_states=True)
 
         self.tokenizer = AutoTokenizer.from_pretrained("allenai/longformer-base-4096")
         self.model = AutoModel.from_pretrained("allenai/longformer-base-4096", output_hidden_states=True)
+        self.sentence_model = SentenceTransformer('bert-base-nli-mean-tokens')
 
     def compute_scores(self, min_document_count=2):
         """
@@ -57,13 +58,15 @@ class GIST:
             doc_ids = list(set(df_docs['d_id']))
             df_docs_tokens = convert_docs(df_docs)
 
-        scores = {"PCDCz": [], "SMCAUSlme": [], "SMCAUSwn": [], "WRDCNCc": [], "WRDIMGc": [], "WRDHYPnv": []}
+        scores = {"PCDCz": [], "PCREFz": [], "SMCAUSlme": [], "SMCAUSwn": [], "WRDCNCc": [], "WRDIMGc": [],
+                  "WRDHYPnv": []}
 
         error_docs = []
         for doc_id in doc_ids:
             err_flag = False
             try:
                 df_doc = df_docs_tokens.loc[df_docs_tokens['d_id'] == doc_id]
+                PCREFz = self.compute_PCREFz(df_doc)
                 _, _, PCDCz = self.find_causal_connectives(df_doc)
                 SMCAUSlme = self.compute_SMCAUSlme(df_doc)
                 SMCAUSwn = self.compute_SMCAUSwn(df_doc)
@@ -76,6 +79,7 @@ class GIST:
                 print(e)
 
             if not err_flag:
+                scores["PCREFz"].append(PCREFz)
                 scores["PCDCz"].append(PCDCz)
                 scores["SMCAUSlme"].append(SMCAUSlme)
                 scores["SMCAUSwn"].append(SMCAUSwn)
@@ -86,7 +90,8 @@ class GIST:
         # gis_score = PCREFz + PCDCz + (SMCAUSlsa - SMCAUSwn) - PCCNCz - zWRDIMGc - WRDHYPnv
 
         # normalizing scores to 0-1 range
-        normalized_scores = {"PCDCz": [], "SMCAUSlme": [], "SMCAUSwn": [], "WRDCNCc": [], "WRDIMGc": [], "WRDHYPnv": []}
+        normalized_scores = {"PCREFz": [], "PCDCz": [], "SMCAUSlme": [], "SMCAUSwn": [], "WRDCNCc": [], "WRDIMGc": [],
+                             "WRDHYPnv": []}
         for idx_name, idx_values in scores.items():
             min_val = min(idx_values)
             max_val = max(idx_values)
@@ -97,11 +102,10 @@ class GIST:
         # computing Gist Inference Score (GIS) for documents
         for i in range(len(doc_ids)):
             if doc_ids[i] not in error_docs:
-                doc_gis = normalized_scores["PCDCz"][i] + (
+                doc_gis = normalized_scores["PCREFz"][i] + normalized_scores["PCDCz"][i] + (
                         normalized_scores["SMCAUSlme"][i] - normalized_scores["SMCAUSwn"][i]) - \
                           normalized_scores["WRDCNCc"][i] - normalized_scores["WRDIMGc"][i] - \
-                          normalized_scores["WRDHYPnv"][
-                              i]
+                          normalized_scores["WRDHYPnv"][i]
 
                 # saving the GIS for current document
                 df_docs.loc[df_docs['d_id'] == doc_ids[i], 'gis'] = doc_gis
@@ -247,12 +251,12 @@ class GIST:
 
         i = 0
         i_token = 0
-        verb_embeddings = []
+        word_embeddings = []
         while i < len(df_doc):
             if df_doc.iloc[i]['token_pos'] in pos_tags:
                 # true, if there's no sub-token
                 if df_doc.iloc[i]['token_text'].lower() == tokens[i_token].lower():
-                    verb_embeddings.append(token_embeddings[i_token])
+                    word_embeddings.append(token_embeddings[i_token])
                     i += 1
                     i_token += 1
                 # it means that there are sub-tokens (a token is broken down to multiple tokens by tokenizer)
@@ -266,7 +270,7 @@ class GIST:
                     while j < len(tokens) and '#' in tokens[j]:
                         tensors.append(token_embeddings[j])
                         j += 1
-                    verb_embeddings.append(torch.mean(torch.stack(tensors), dim=0))
+                    word_embeddings.append(torch.mean(torch.stack(tensors), dim=0))
                     i += 1
                     i_token = copy.deepcopy(j)
             else:
@@ -274,15 +278,34 @@ class GIST:
                 i_token += 1
 
         # checking if we have the embeddings of all VERBs
-        assert len(df_doc.loc[df_doc['token_pos'].isin(pos_tags)]), len(verb_embeddings)
+        assert len(df_doc.loc[df_doc['token_pos'].isin(pos_tags)]) == len(word_embeddings)
 
         # computing the cosine similarity among all VERBs in document
         scores = []
         cosine = nn.CosineSimilarity(dim=0)
-        for pair in itertools.combinations(verb_embeddings, r=2):
+        for pair in itertools.combinations(word_embeddings, r=2):
             scores.append(cosine(pair[0], pair[1]).item())
 
         return statistics.mean(scores)
+
+    def compute_PCREFz(self, df_doc):
+        """
+        Computing Text Easability PC Referential cohesion
+        :param df_doc: data frame of a document
+        :return:
+        """
+
+        sentences = self.get_doc_sentences(df_doc)
+        sentence_embeddings = self.sentence_model.encode(sentences)
+
+        scores = []
+
+        for pair in itertools.combinations(sentence_embeddings, r=2):
+            a = np.reshape(pair[0], (1, pair[0].size))
+            b = np.reshape(pair[1], (1, pair[1].size))
+            scores.append(cosine_similarity(a, b).item())
+
+        return sum(scores) / len(scores)
 
     def _get_bert_token_embeddings(self, doc: str, layers: list):
         """
