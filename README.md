@@ -11,7 +11,12 @@ Our end goal is to have a metric that gives us an understanding of the potential
 ### Gist Inference Score (GIS) formula
 
 ```
-GIS = Referential Cohesion + Deep Cohesion + (LSA Verb Overlap - WordNet Verb Overlap) - Word Concreteness - Imageability - Hypernymy Nouns & Verbs
+GIS = Referential Cohesion 
+      + Deep Cohesion 
+      + (LSA Verb Overlap - WordNet Verb Overlap) 
+      - Word Concreteness 
+      - Imageability 
+      - Hypernymy Nouns & Verbs
 ```
 
 ### List of indices
