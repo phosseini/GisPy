@@ -30,6 +30,6 @@ GIS = Referential Cohesion
 
 :white_check_mark: &nbsp; Implemented
 
-:x: &nbsp; Not implemented yet
+:cyclone: &nbsp; Partially implemented
 
-:cyclone: &nbsp; Work in progress
+:x: &nbsp; Not implemented yet
