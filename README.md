@@ -1,9 +1,8 @@
-# GisPy: Gist Implementation in Python
-This repository is dedicated to the implementation of gist in Python. 
+# GisPy: Gist Inference Score Implementation in Python
 
-**What is Gist?** Based on Fuzzy-trace theory (FTT), when individuals read a piece of text, there are two mental representations encoded in parallel in their mind, including gist and verbatim. While verbatim is related to surface-level information in the text, gist represents the bottom-meaning and underlying semantics of it. Inspired by the Gist Inference Score (GIS), we leverage text analysis and Natural Language Processing (NLP) tools to implement and improve GIS in Python. 
+**What is Gist?** Based on Fuzzy-trace theory (FTT), when individuals read a piece of text, there are two mental representations encoded in parallel in their mind including 1) `gist` and 2) `verbatim`. While verbatim is related to surface-level information in the text, gist represents the bottom-line meaning and underlying semantics of it. Inspired by the Gist Inference Score (GIS) formula introduced by [Wolfe et al. (2019)](https://link.springer.com/content/pdf/10.3758/s13428-019-01284-4.pdf) and implementation of coherence/cohesion indices by [Coh-Metrix](http://cohmetrix.com/), we leverage text analysis and Natural Language Processing (NLP) tools to implement and improve GIS in Python. 
 
-Our end goal is to have a metric that gives us an understanding of the potential and capacity of a piece of text in creating a coherent gist representation in the human brain/mind.
+Our goal is to develop a tool and metric that estimates the capacity of text in creating a coherent gist and mental representation in the human brain/mind.
 
 ### How to run GisPy
 * First, put all text documents separately as `.txt` files (one document per file) in the `/data/documents` folder.
@@ -31,6 +30,6 @@ GIS = Referential Cohesion
 
 :white_check_mark: &nbsp; Implemented
 
-:x: &nbsp; Not implemented yet
+:cyclone: &nbsp; Partially implemented
 
-:cyclone: &nbsp; Work in progress
+:x: &nbsp; Not implemented yet
