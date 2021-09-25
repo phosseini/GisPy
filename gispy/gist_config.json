@@ -1,0 +1,4 @@
+{
+  "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "document_batch_size": 1
+}

@@ -1,6 +1,7 @@
 import os
 import re
 import copy
+import json
 import torch
 import itertools
 import statistics
@@ -23,24 +24,50 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 class GIST:
     def __init__(self, docs_path='../data/documents'):
+        print('loading parameters and models...')
         self.docs_path = docs_path
+        # loading parameters
+        config_path = 'gist_config.json'
+        if os.path.exists(config_path):
+            with open(config_path) as f:
+                params = json.load(f)
+        else:
+            print('Please put the config file in the following path: /gist_config.json')
+            raise FileNotFoundError
+
+        model_name = params['model_name']
+        self.document_batch_size = params['document_batch_size']
 
         # since documents may be longer than BERT's maximum length, we use Longformer model with maximum length of 4096
         # self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         # self.model = AutoModel.from_pretrained("bert-base-uncased", output_hidden_states=True)
 
-        self.tokenizer = AutoTokenizer.from_pretrained("allenai/longformer-base-4096")
-        self.model = AutoModel.from_pretrained("allenai/longformer-base-4096", output_hidden_states=True)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model = AutoModel.from_pretrained(model_name)
         self.sentence_model = SentenceTransformer('bert-base-nli-mean-tokens')
 
     def compute_scores(self, min_document_count=2):
         """
         computing the Gist Inference Score (GIS) for a collection of documents
         :param min_document_count: minimum number of documents required to compute the GIS
+        :param document_batch_size: number of documents to process in each batch
         :return:
         """
 
+        # ----------------
+        # initialize lists
+        scores = {}
+        normalized_scores = {}
+        z_scores = {}
+        list_of_indices = ["PCREFz", "PCDCz", "SMCAUSlme", "SMCAUSwn", "WRDCNCc", "WRDIMGc", "WRDHYPnv"]
+        for index in list_of_indices:
+            scores[index] = []  # raw scores
+            normalized_scores[index] = []  # to store normalized scores to 0-1 range
+            z_scores[index] = []  # to store z-scores of indices
+        # ----------------
+
         # Step 1: reading the raw text files/documents
+        print('reading input text files...')
         if os.path.isdir(self.docs_path):
             # reading text files and building a data frame
             df_docs = pd.DataFrame(columns=["d_id", "text", "gis", "gis_zscore"])
@@ -55,52 +82,52 @@ class GIST:
         if len(df_docs) < min_document_count:
             return 'There should be minimum two documents to process'
         else:
-            doc_ids = list(set(df_docs['d_id']))
-            df_docs_tokens = convert_docs(df_docs)
+            batch_counter = 1
+            for batch in np.array_split(df_docs, self.document_batch_size):
+                print('starting processing batch #{}'.format(batch_counter))
+                doc_ids = list(set(batch['d_id']))
+                print('converting raw documents to tokens...')
+                df_docs_tokens = convert_docs(batch)
 
-        # ----------------
-        # initialize lists
-        scores = {}
-        normalized_scores = {}
-        z_scores = {}
-        list_of_indices = ["PCREFz", "PCDCz", "SMCAUSlme", "SMCAUSwn", "WRDCNCc", "WRDIMGc", "WRDHYPnv"]
-        for index in list_of_indices:
-            scores[index] = []  # raw scores
-            normalized_scores[index] = []  # to store normalized scores to 0-1 range
-            z_scores[index] = []  # to store z-scores of indices
-        # ----------------
+                # -----------------------------------------------
+                # computing token and sentence embeddings
+                print('computing the batch token and sentence embeddings...')
+                embeddings = self._get_embeddings(df_docs_tokens)
+                # -----------------------------------------------
+                error_docs = []
+                print('computing the GIS indices...')
+                for doc_id in doc_ids:
+                    err_flag = False
+                    try:
+                        df_doc = df_docs_tokens.loc[df_docs_tokens['d_id'] == doc_id]
+                        PCREFz = self._compute_PCREFz(embeddings[doc_id][0])
+                        SMCAUSlme = self._compute_SMCAUSlme(df_doc, embeddings[doc_id])
+                        _, _, PCDCz = self._find_causal_connectives(df_doc)
+                        SMCAUSwn = self._compute_SMCAUSwn(df_doc)
+                        WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc(df_doc)
+                        WRDHYPnv = self._compute_WRDHYPnv(df_doc)
+                    except Exception as e:
+                        err_flag = True
+                        error_docs.append(doc_id)
+                        print('Error in computing the indexes of document: {}'.format(doc_id))
+                        print(e)
 
-        error_docs = []
-        for doc_id in doc_ids:
-            err_flag = False
-            try:
-                df_doc = df_docs_tokens.loc[df_docs_tokens['d_id'] == doc_id]
-                PCREFz = self._compute_PCREFz(df_doc)
-                _, _, PCDCz = self._find_causal_connectives(df_doc)
-                SMCAUSlme = self._compute_SMCAUSlme(df_doc)
-                SMCAUSwn = self._compute_SMCAUSwn(df_doc)
-                WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc(df_doc)
-                WRDHYPnv = self._compute_WRDHYPnv(df_doc)
-            except Exception as e:
-                err_flag = True
-                error_docs.append(doc_id)
-                print('Error in computing the indexes of document: {}'.format(doc_id))
-                print(e)
+                    # checking if all the indices are computed without any error
+                    if not err_flag:
+                        scores["PCREFz"].append(PCREFz)
+                        scores["PCDCz"].append(PCDCz)
+                        scores["SMCAUSlme"].append(SMCAUSlme)
+                        scores["SMCAUSwn"].append(SMCAUSwn)
+                        scores["WRDCNCc"].append(WRDCNCc)
+                        scores["WRDIMGc"].append(WRDIMGc)
+                        scores["WRDHYPnv"].append(WRDHYPnv)
 
-            # by this flag, we want to make sure that for a document, all the indices are computed without any error
-            # since for computing the final GIS, we need all indices
-            if not err_flag:
-                scores["PCREFz"].append(PCREFz)
-                scores["PCDCz"].append(PCDCz)
-                scores["SMCAUSlme"].append(SMCAUSlme)
-                scores["SMCAUSwn"].append(SMCAUSwn)
-                scores["WRDCNCc"].append(WRDCNCc)
-                scores["WRDIMGc"].append(WRDIMGc)
-                scores["WRDHYPnv"].append(WRDHYPnv)
+                batch_counter += 1
 
         # GIS formula
         # gis_score = PCREFz + PCDCz + (SMCAUSlsa - SMCAUSwn) - PCCNCz - zWRDIMGc - WRDHYPnv
 
+        print('normalizing values of indices...')
         for idx_name, idx_values in scores.items():
             # saving the z-score
             z_scores[idx_name] = zscore(idx_values)
@@ -113,6 +140,7 @@ class GIST:
                 normalized_scores[idx_name].append(normalized)
 
         # computing Gist Inference Score (GIS) for documents
+        print('computing the final GIS...')
         for i in range(len(doc_ids)):
             if doc_ids[i] not in error_docs:
                 doc_gis = normalized_scores["PCREFz"][i] + normalized_scores["PCDCz"][i] + (
@@ -129,9 +157,11 @@ class GIST:
                 df_docs.loc[df_docs['d_id'] == doc_ids[i], 'gis'] = doc_gis
                 df_docs.loc[df_docs['d_id'] == doc_ids[i], 'gis_zscore'] = doc_gis_zscore
 
+        print('computing GIS for all documents is done.')
         return df_docs
 
-    def _get_doc_sentences(self, df_doc):
+    @staticmethod
+    def _get_doc_sentences(df_doc):
         sentences = []
         current_sentence = ""
         current_sentence_idx = 0
@@ -148,7 +178,8 @@ class GIST:
                     current_sentence_idx = df_doc.iloc[i + 1]['s_id']
         return sentences
 
-    def _find_causal_verbs(self, df_doc):
+    @staticmethod
+    def _find_causal_verbs(df_doc):
         causal_verbs = []
         verbs = list(df_doc.loc[df_doc['token_pos'] == 'VERB'].token_lemma)
         for verb in verbs:
@@ -250,7 +281,7 @@ class GIST:
                 img_score += (word_img_score / len(records))
         return conc_score / len(df_doc), img_score / len(df_doc)
 
-    def _compute_SMCAUSlme(self, df_doc, pos_tags=['VERB']):
+    def _compute_SMCAUSlme(self, df_doc, doc_embedding, pos_tags=['VERB']):
         """
         computing the similarity among tokens with certain POS tag in document
         lme stands for the Language Model-based Embedding which is a replacement for Latent Semantic Analysis (LSA) here
@@ -259,14 +290,7 @@ class GIST:
         :return:
         """
 
-        # creating list of tokens
-        doc_context = []
-        for index, row in df_doc.iterrows():
-            doc_context.append(row['token_text'])
-
-        torch.set_grad_enabled(False)
-
-        tokens, token_embeddings = self._get_longformer_token_embeddings(' '.join(doc_context), layers=[-1])
+        tokens, token_embeddings = doc_embedding[1], doc_embedding[2]
 
         i = 0
         i_token = 0
@@ -305,23 +329,18 @@ class GIST:
         for pair in itertools.combinations(word_embeddings, r=2):
             scores.append(cosine(pair[0], pair[1]).item())
 
-        return statistics.mean(scores)
+        return sum(scores) / len(scores)
 
-    def _compute_PCREFz(self, df_doc):
+    def _compute_PCREFz(self, sentence_embeddings):
         """
         Computing Text Easability PC Referential cohesion
         :param df_doc: data frame of a document
         :return:
         """
-
-        sentences = self._get_doc_sentences(df_doc)
-        sentence_embeddings = self.sentence_model.encode(sentences)
-
         scores = []
-
         for pair in itertools.combinations(sentence_embeddings, r=2):
-            a = np.reshape(pair[0], (1, pair[0].size))
-            b = np.reshape(pair[1], (1, pair[1].size))
+            a = np.reshape(pair[0], (1, pair[0].size()[0]))
+            b = np.reshape(pair[1], (1, pair[1].size()[0]))
             scores.append(cosine_similarity(a, b).item())
 
         return sum(scores) / len(scores)
@@ -387,6 +406,77 @@ class GIST:
         assert len(output) == len(tokens)
 
         return tokens, output
+
+    @staticmethod
+    # Mean Pooling - Take attention mask into account for correct averaging
+    def _mean_pooling(model_output, attention_mask):
+        token_embeddings = model_output[0]  # First element of model_output contains all token embeddings
+        input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+        sum_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1)
+        sum_mask = torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+        return sum_embeddings / sum_mask
+
+    def _get_embeddings(self, df_docs, max_length=128):
+        """
+        tokenizing a string with BERT and getting the embeddings of each token.
+        :param doc:
+        :param layers:
+        :return:
+        """
+
+        # Step 1: creating list of all sentences of all documents for batch tokenization
+        all_sentences = []
+        doc_sentences_count = []
+        doc_ids = list(set(df_docs['d_id']))
+        for doc_id in doc_ids:
+            doc_sentences = self._get_doc_sentences(df_docs.loc[df_docs['d_id'] == doc_id])
+            all_sentences.extend(doc_sentences)
+            # keeping track of number of sentences in each document
+            doc_sentences_count.append(len(doc_sentences))
+
+        # Step 2: now, tokenization and computing the embeddings
+        encoded_input = self.tokenizer(all_sentences, padding=True, truncation=True, max_length=max_length,
+                                       return_tensors='pt')
+
+        # Compute token embeddings
+        with torch.no_grad():
+            model_output = self.model(**encoded_input)
+
+        # Perform pooling to compute sentence embeddings. In this case, mean pooling
+        sentence_embeddings = self._mean_pooling(model_output, encoded_input['attention_mask'])
+
+        # get all hidden states
+        # size of states: (number of sentences) * (embedding size) * (embedding dimension)
+        states = model_output.last_hidden_state
+
+        sentence_idx = 0
+        all_embeddings = {}  # to store token and sentence embeddings of all documents
+        for i in range(len(doc_ids)):
+            all_embeddings[doc_ids[i]] = [[], [], []]
+            doc_sentence_embeddings = []
+            doc_tokens = []
+            doc_token_embeddings = []
+            for j in range(sentence_idx, sentence_idx + doc_sentences_count[i]):
+                doc_sentence_embeddings.append(sentence_embeddings[j])
+                # computing the token embedding
+                tokens = [self.tokenizer.decode(idx) for idx in encoded_input['input_ids'][j]]
+                token_embeddings = [token_embedding for token_embedding in states[j]]
+                tokens = tokens[1:-1]
+                token_embeddings = token_embeddings[1:-1]
+
+                assert len(tokens) == len(token_embeddings)
+
+                doc_tokens.extend(tokens)
+                doc_token_embeddings.extend(token_embeddings)
+
+            sentence_idx += doc_sentences_count[i]
+
+            # saving sentence embeddings
+            all_embeddings[doc_ids[i]][0] = doc_sentence_embeddings
+            all_embeddings[doc_ids[i]][1] = doc_tokens
+            all_embeddings[doc_ids[i]][2] = doc_token_embeddings
+
+        return all_embeddings
 
 
 class GIS:
