@@ -5,7 +5,9 @@
 Our goal is to develop a tool and metric that estimates the capacity of text in creating a coherent gist and mental representation in the human brain/mind.
 
 ### How to run GisPy
-* First, put all text documents separately as `.txt` files (one document per file) in the `/data/documents` folder.
+* Put all text documents separately as `.txt` files (one document per file) in the `/data/documents` folder.
+* Now, run the following class: [`/gispy/run.py`](https://github.com/phosseini/gispy/blob/master/gispy/run.py)
+* Results will be saved at: `/gispy/results.csv`
 
 ### Gist Inference Score (GIS) formula
 
