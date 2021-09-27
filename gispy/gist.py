@@ -56,7 +56,7 @@ class GIST:
         scores = {}
         normalized_scores = {}
         z_scores = {}
-        list_of_indices = ["PCREFz", "PCDCz", "SMCAUSlme", "SMCAUSwn", "WRDCNCc", "WRDIMGc", "WRDHYPnv"]
+        list_of_indices = ["PCREF", "PCDC", "SMCAUSlme", "SMCAUSwn", "WRDCNCc", "WRDIMGc", "WRDHYPnv"]
         for index in list_of_indices:
             scores[index] = []  # raw scores
             normalized_scores[index] = []  # to store normalized scores to 0-1 range
@@ -107,9 +107,9 @@ class GIST:
                     err_flag = False
                     try:
                         df_doc = df_docs_tokens.loc[df_docs_tokens['d_id'] == doc_id]
-                        PCREFz = self._compute_PCREFz(embeddings[doc_id][0])
+                        PCREF = self._compute_PCREF(embeddings[doc_id][0])
                         SMCAUSlme = self._compute_SMCAUSlme(df_doc, embeddings[doc_id])
-                        _, _, PCDCz = self._find_causal_connectives(df_doc)
+                        _, _, PCDC = self._find_causal_connectives(df_doc)
                         SMCAUSwn = self._compute_SMCAUSwn(df_doc)
                         WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc(df_doc)
                         WRDHYPnv = self._compute_WRDHYPnv(df_doc)
@@ -121,8 +121,8 @@ class GIST:
 
                     # checking if all the indices are computed without any error
                     if not err_flag:
-                        scores["PCREFz"].append(PCREFz)
-                        scores["PCDCz"].append(PCDCz)
+                        scores["PCREF"].append(PCREF)
+                        scores["PCDC"].append(PCDC)
                         scores["SMCAUSlme"].append(SMCAUSlme)
                         scores["SMCAUSwn"].append(SMCAUSwn)
                         scores["WRDCNCc"].append(WRDCNCc)
@@ -146,14 +146,20 @@ class GIST:
                 normalized = (val - min_val) / (max_val - min_val)
                 normalized_scores[idx_name].append(normalized)
 
+        # check if scores match the number of documents
+        assert len(doc_ids) - len(error_docs) == len(scores['PCREF'])
+
         # computing Gist Inference Score (GIS) for documents
         print('computing the final GIS...')
         score_types = {'gis': normalized_scores, 'gis_zscore': z_scores}
         for i in range(len(doc_ids)):
             if doc_ids[i] not in error_docs:
+                # saving the raw scores of different indices for current document
+                for k, v in scores.items():
+                    df_docs.loc[df_docs['d_id'] == doc_ids[i], k] = v[i]
                 # computing different scores for the document
                 for score_type, scores_values in score_types.items():
-                    doc_score = scores_values["PCREFz"][i] + scores_values["PCDCz"][i] + (
+                    doc_score = scores_values["PCREF"][i] + scores_values["PCDC"][i] + (
                             scores_values["SMCAUSlme"][i] - scores_values["SMCAUSwn"][i]) - \
                                 scores_values["WRDCNCc"][i] - scores_values["WRDIMGc"][i] - \
                                 scores_values["WRDHYPnv"][i]
@@ -337,7 +343,7 @@ class GIST:
 
         return sum(scores) / len(scores)
 
-    def _compute_PCREFz(self, sentence_embeddings):
+    def _compute_PCREF(self, sentence_embeddings):
         """
         Computing Text Easability PC Referential cohesion
         :param df_doc: data frame of a document
