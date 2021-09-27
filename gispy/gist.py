@@ -23,17 +23,15 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 
 class GIST:
-    def __init__(self, docs_path='../data/documents'):
+    def __init__(self, docs_path='../data/documents', config_path='gist_config.json'):
         print('loading parameters and models...')
         self.docs_path = docs_path
         # loading parameters
-        config_path = 'gist_config.json'
         if os.path.exists(config_path):
             with open(config_path) as f:
                 params = json.load(f)
         else:
-            print('Please put the config file in the following path: /gist_config.json')
-            raise FileNotFoundError
+            raise FileNotFoundError('Please put the config file in the following path: /gist_config.json')
 
         model_name = params['model_name']
         self.document_batch_size = params['document_batch_size']
@@ -50,7 +48,6 @@ class GIST:
         """
         computing the Gist Inference Score (GIS) for a collection of documents
         :param min_document_count: minimum number of documents required to compute the GIS
-        :param document_batch_size: number of documents to process in each batch
         :return:
         """
 
@@ -76,27 +73,37 @@ class GIST:
                 with open('{}/{}'.format(self.docs_path, txt_file), 'r') as input_file:
                     df_docs = df_docs.append({"d_id": txt_file, 'text': input_file.read()}, ignore_index=True)
         else:
-            return 'The directory path does not exist'
+            raise Exception(
+                'The document directory path you are using does not exist.\nCurrent path: {}'.format(self.docs_path))
 
         # Step 2: converting the raw text files into tokens and adding their POS tags
         if len(df_docs) < min_document_count:
-            return 'There should be minimum two documents to process'
+            raise Exception('There should be minimum two documents to process')
+        elif self.document_batch_size > len(df_docs):
+            raise Exception(
+                'batch size (document_batch_size parameter) should not be greater than the total number of documents.'
+                '\nCurrent number of documents: {}\nCurrent batch size: {}'.format(len(df_docs),
+                                                                                   self.document_batch_size))
+
         else:
             batch_counter = 1
+            doc_ids = list(set(df_docs['d_id']))
+            print('------------------------------')
+            print('number of documents: {}'.format(len(df_docs)))
+            print('document batch size: {}'.format(self.document_batch_size))
+            print('document(s) in each batch: {}'.format(int(len(df_docs) / self.document_batch_size)))
+            print('------------------------------')
+            error_docs = []
             for batch in np.array_split(df_docs, self.document_batch_size):
-                print('starting processing batch #{}'.format(batch_counter))
-                doc_ids = list(set(batch['d_id']))
-                print('converting raw documents to tokens...')
+                print('processing batch #{}'.format(batch_counter))
+                batch_doc_ids = list(set(batch['d_id']))
                 df_docs_tokens = convert_docs(batch)
 
                 # -----------------------------------------------
                 # computing token and sentence embeddings
-                print('computing the batch token and sentence embeddings...')
                 embeddings = self._get_embeddings(df_docs_tokens)
                 # -----------------------------------------------
-                error_docs = []
-                print('computing the GIS indices...')
-                for doc_id in doc_ids:
+                for doc_id in batch_doc_ids:
                     err_flag = False
                     try:
                         df_doc = df_docs_tokens.loc[df_docs_tokens['d_id'] == doc_id]
@@ -141,24 +148,23 @@ class GIST:
 
         # computing Gist Inference Score (GIS) for documents
         print('computing the final GIS...')
+        score_types = {'gis': normalized_scores, 'gis_zscore': z_scores}
         for i in range(len(doc_ids)):
             if doc_ids[i] not in error_docs:
-                doc_gis = normalized_scores["PCREFz"][i] + normalized_scores["PCDCz"][i] + (
-                        normalized_scores["SMCAUSlme"][i] - normalized_scores["SMCAUSwn"][i]) - \
-                          normalized_scores["WRDCNCc"][i] - normalized_scores["WRDIMGc"][i] - \
-                          normalized_scores["WRDHYPnv"][i]
+                # computing different scores for the document
+                for score_type, scores_values in score_types.items():
+                    doc_score = scores_values["PCREFz"][i] + scores_values["PCDCz"][i] + (
+                            scores_values["SMCAUSlme"][i] - scores_values["SMCAUSwn"][i]) - \
+                                scores_values["WRDCNCc"][i] - scores_values["WRDIMGc"][i] - \
+                                scores_values["WRDHYPnv"][i]
+                    df_docs.loc[df_docs['d_id'] == doc_ids[i], score_type] = doc_score
 
-                doc_gis_zscore = z_scores["PCREFz"][i] + z_scores["PCDCz"][i] + (
-                        z_scores["SMCAUSlme"][i] - z_scores["SMCAUSwn"][i]) - \
-                                 z_scores["WRDCNCc"][i] - z_scores["WRDIMGc"][i] - \
-                                 z_scores["WRDHYPnv"][i]
-
-                # saving the GIS for current document
-                df_docs.loc[df_docs['d_id'] == doc_ids[i], 'gis'] = doc_gis
-                df_docs.loc[df_docs['d_id'] == doc_ids[i], 'gis_zscore'] = doc_gis_zscore
-
-        print('computing GIS for all documents is done.')
-        return df_docs
+        try:
+            # saving result in a csv file
+            df_docs.to_csv('results.csv')
+            print('computing GIS for all documents is done. results are saved at /results.csv')
+        except Exception as e:
+            print('error is saving the results. detail: {}'.format(e))
 
     @staticmethod
     def _get_doc_sentences(df_doc):
