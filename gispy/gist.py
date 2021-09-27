@@ -164,7 +164,7 @@ class GIST:
             df_docs.to_csv('results.csv')
             print('computing GIS for all documents is done. results are saved at /results.csv')
         except Exception as e:
-            print('error is saving the results. detail: {}'.format(e))
+            print('error in saving the results. detail: {}'.format(e))
 
     @staticmethod
     def _get_doc_sentences(df_doc):
