@@ -93,7 +93,7 @@ class GIST:
             print('document batch size: {}'.format(self.document_batch_size))
             print('document(s) in each batch: {}'.format(int(len(df_docs) / self.document_batch_size)))
             print('------------------------------')
-            error_docs = []
+            error_docs = {}
             for batch in np.array_split(df_docs, self.document_batch_size):
                 print('processing batch #{}'.format(batch_counter))
                 batch_doc_ids = list(set(batch['d_id']))
@@ -115,9 +115,7 @@ class GIST:
                         WRDHYPnv = self._compute_WRDHYPnv(df_doc)
                     except Exception as e:
                         err_flag = True
-                        error_docs.append(doc_id)
-                        print('Error in computing the indexes of document: {}'.format(doc_id))
-                        print(e)
+                        error_docs[doc_id] = e
 
                     # checking if all the indices are computed without any error
                     if not err_flag:
@@ -134,17 +132,34 @@ class GIST:
         # GIS formula
         # gis_score = PCREFz + PCDCz + (SMCAUSlsa - SMCAUSwn) - PCCNCz - zWRDIMGc - WRDHYPnv
 
-        print('normalizing values of indices...')
-        for idx_name, idx_values in scores.items():
-            # saving the z-score
-            z_scores[idx_name] = zscore(idx_values)
+        # -----------------------------------
+        # writing document names with error
+        with open("docs_with_error.txt", "w") as outfile:
+            outfile.write("document name: error message\n")
+            outfile.write("----------------------------\n")
+            for doc_id, error in error_docs.items():
+                outfile.write("{}: {}\n".format(doc_id, error))
+        # -----------------------------------
 
-            # computing the normalized score in [0, 1] range
-            min_val = min(idx_values)
-            max_val = max(idx_values)
-            for val in idx_values:
-                normalized = (val - min_val) / (max_val - min_val)
-                normalized_scores[idx_name].append(normalized)
+        print('normalizing values of indices...')
+        if len(scores['PCREF']) != 0:
+            for idx_name, idx_values in scores.items():
+                # saving the z-score
+                z_scores[idx_name] = zscore(idx_values)
+
+                # computing the normalized score in [0, 1] range
+                min_val = min(idx_values)
+                max_val = max(idx_values)
+                for val in idx_values:
+                    if (max_val - min_val) != 0:
+                        normalized = (val - min_val) / (max_val - min_val)
+                        normalized_scores[idx_name].append(normalized)
+                    else:
+                        # if min and max are the same, then all values are the same
+                        normalized_scores[idx_name].append(val)
+        else:
+            raise Exception(
+                'there is no score computed to normalize. check the /docs_with_error.txt to see the detailed errors')
 
         # check if scores match the number of documents
         assert len(doc_ids) - len(error_docs) == len(scores['PCREF'])
@@ -152,20 +167,26 @@ class GIST:
         # computing Gist Inference Score (GIS) for documents
         print('computing the final GIS...')
         score_types = {'gis': normalized_scores, 'gis_zscore': z_scores}
+        # we define d_idx since number of all documents may not be same (due to errors)
+        # as documents for which we have computed scores
+        d_idx = 0
         for i in range(len(doc_ids)):
-            if doc_ids[i] not in error_docs:
+            if doc_ids[i] not in error_docs.keys():
                 # saving the raw scores of different indices for current document
                 for k, v in scores.items():
-                    df_docs.loc[df_docs['d_id'] == doc_ids[i], k] = v[i]
+                    df_docs.loc[df_docs['d_id'] == doc_ids[i], k] = v[d_idx]
                 # computing different scores for the document
                 for score_type, scores_values in score_types.items():
-                    doc_score = scores_values["PCREF"][i] + scores_values["PCDC"][i] + (
-                            scores_values["SMCAUSlme"][i] - scores_values["SMCAUSwn"][i]) - \
-                                scores_values["WRDCNCc"][i] - scores_values["WRDIMGc"][i] - \
-                                scores_values["WRDHYPnv"][i]
+                    doc_score = scores_values["PCREF"][d_idx] + scores_values["PCDC"][d_idx] + (
+                            scores_values["SMCAUSlme"][d_idx] - scores_values["SMCAUSwn"][d_idx]) - \
+                                scores_values["WRDCNCc"][d_idx] - scores_values["WRDIMGc"][d_idx] - \
+                                scores_values["WRDHYPnv"][d_idx]
                     df_docs.loc[df_docs['d_id'] == doc_ids[i], score_type] = doc_score
+                d_idx += 1
 
         try:
+            # filtering out rows for which we don't have GIS
+            df_docs = df_docs.loc[df_docs['gis'].notnull()]
             # saving result in a csv file
             df_docs.to_csv('results.csv')
             print('computing GIS for all documents is done. results are saved at /results.csv')
@@ -338,8 +359,12 @@ class GIST:
         # computing the cosine similarity among all VERBs in document
         scores = []
         cosine = nn.CosineSimilarity(dim=0)
-        for pair in itertools.combinations(word_embeddings, r=2):
-            scores.append(cosine(pair[0], pair[1]).item())
+        if len(word_embeddings) > 1:
+            for pair in itertools.combinations(word_embeddings, r=2):
+                scores.append(cosine(pair[0], pair[1]).item())
+        else:
+            # if there's one VERB in the document (which shouldn't often happen), then there's %100 similarity
+            return 1
 
         return sum(scores) / len(scores)
 
@@ -350,10 +375,14 @@ class GIST:
         :return:
         """
         scores = []
-        for pair in itertools.combinations(sentence_embeddings, r=2):
-            a = np.reshape(pair[0], (1, pair[0].size()[0]))
-            b = np.reshape(pair[1], (1, pair[1].size()[0]))
-            scores.append(cosine_similarity(a, b).item())
+        if len(sentence_embeddings) > 1:
+            for pair in itertools.combinations(sentence_embeddings, r=2):
+                a = np.reshape(pair[0], (1, pair[0].size()[0]))
+                b = np.reshape(pair[1], (1, pair[1].size()[0]))
+                scores.append(cosine_similarity(a, b).item())
+        else:
+            # if there is only one sentence in the document, then there is %100 referential cohesion
+            return 1
 
         return sum(scores) / len(scores)
 
