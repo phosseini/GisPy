@@ -4,7 +4,7 @@ import copy
 import json
 import torch
 import itertools
-import statistics
+# import statistics
 import numpy as np
 import pandas as pd
 import torch.nn as nn
@@ -18,7 +18,7 @@ from scipy.stats import zscore
 from os.path import isfile, join
 from nltk.corpus import wordnet as wn
 from transformers import AutoModel, AutoTokenizer
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
@@ -42,7 +42,7 @@ class GIST:
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModel.from_pretrained(model_name)
-        self.sentence_model = SentenceTransformer('bert-base-nli-mean-tokens')
+        # self.sentence_model = SentenceTransformer('bert-base-nli-mean-tokens')
 
     def compute_scores(self, min_document_count=2):
         """
@@ -249,19 +249,22 @@ class GIST:
         computing the WordNet Verb Overlap in a document
         :return:
         """
-        # getting all VERBs in document
-        verbs = list(df_doc.loc[df_doc['token_pos'] == 'VERB'].token_lemma)
+        # getting all unique VERBs in a document
+        verbs = set(list(df_doc.loc[df_doc['token_pos'] == 'VERB'].token_lemma))
         verb_synsets = {}
 
-        # getting all synsets to which a verb belongs
+        # getting all synsets (synonym sets) to which a verb belongs
         for verb in verbs:
-            verb_synsets[verb] = list(set(wn.synsets(verb, wn.VERB)))
+            verb_synsets[verb] = set(wn.synsets(verb, wn.VERB))
 
-        pairs = list(zip(verbs, verbs[1:] + verbs[:1]))
         n_overlaps = 0
-        for pair in pairs:
-            if set(verb_synsets[pair[0]]) & set(verb_synsets[pair[1]]):
-                n_overlaps += 1
+        if len(verbs) > 1:
+            pairs = set(list(itertools.combinations(verbs, r=2)))
+            for pair in pairs:
+                if verb_synsets[pair[0]] & verb_synsets[pair[1]]:
+                    n_overlaps += 1
+        else:
+            return 1
 
         return n_overlaps / len(pairs)
 
@@ -460,8 +463,7 @@ class GIST:
     def _get_embeddings(self, df_docs, max_length=128):
         """
         tokenizing a string with BERT and getting the embeddings of each token.
-        :param doc:
-        :param layers:
+        :param df_docs:
         :return:
         """
 
