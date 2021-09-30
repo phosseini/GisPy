@@ -7,6 +7,7 @@ import itertools
 # import statistics
 import numpy as np
 import pandas as pd
+import numbers
 import torch.nn as nn
 
 from utils import find_mrc_word
@@ -134,7 +135,7 @@ class GIST:
 
         # -----------------------------------
         # writing document names with error
-        with open("docs_with_error.txt", "w") as outfile:
+        with open("error_log.txt", "w") as outfile:
             outfile.write("document name: error message\n")
             outfile.write("----------------------------\n")
             for doc_id, error in error_docs.items():
@@ -159,7 +160,7 @@ class GIST:
                         normalized_scores[idx_name].append(val)
         else:
             raise Exception(
-                'there is no score computed to normalize. check the /docs_with_error.txt to see the detailed errors')
+                'there is no score computed to normalize. check the /error_log.txt to see the detailed errors')
 
         # check if scores match the number of documents
         assert len(doc_ids) - len(error_docs) == len(scores['PCREF'])
@@ -244,7 +245,7 @@ class GIST:
                     matched_patterns.append(pattern)
         return causal_connectives_count, matched_patterns, causal_connectives_count / len(sentences)
 
-    def _compute_SMCAUSwn(self, df_doc):
+    def _compute_SMCAUSwn_v1(self, df_doc):
         """
         computing the WordNet Verb Overlap in a document
         :return:
@@ -267,6 +268,42 @@ class GIST:
             return 1
 
         return n_overlaps / len(pairs)
+
+    def _compute_SMCAUSwn(self, df_doc, similarity_measure='path'):
+        """
+        computing the WordNet Verb Overlap in a document
+        :param similarity_measure: the type of similarity to use, one of the following: ['path', 'lch', 'wup]
+        :return:
+        """
+        # getting all unique VERBs in a document
+        verbs = set(list(df_doc.loc[df_doc['token_pos'] == 'VERB'].token_lemma))
+        verb_synsets = {}
+
+        # getting all synsets (synonym sets) to which a verb belongs
+        for verb in verbs:
+            verb_synsets[verb] = set(wn.synsets(verb, wn.VERB))
+
+        verb_pairs = set(list(itertools.combinations(verbs, r=2)))
+
+        similarity_scores = []
+
+        # computing the similarity of verb pairs by computing the average similarity between their synonym sets
+        # each verb can have one or multiple synonym sets
+        for verb_pair in verb_pairs:
+            synset_pairs = set(list(itertools.product(verb_synsets[verb_pair[0]], verb_synsets[verb_pair[1]])))
+            for synset_pair in synset_pairs:
+                if similarity_measure == 'path':
+                    similarity_score = wn.path_similarity(synset_pair[0], synset_pair[1])
+                elif similarity_measure == 'lch':
+                    similarity_score = wn.lch_similarity(synset_pair[0], synset_pair[1])
+                elif similarity_measure == 'wup':
+                    similarity_score = wn.wup_similarity(synset_pair[0], synset_pair[1])
+
+                # check if similarity_score is not None and is a number
+                if isinstance(similarity_score, numbers.Number):
+                    similarity_scores.append(similarity_score)
+
+        return sum(similarity_scores) / len(similarity_scores)
 
     def _compute_WRDHYPnv(self, df_doc):
         """
@@ -363,7 +400,8 @@ class GIST:
         scores = []
         cosine = nn.CosineSimilarity(dim=0)
         if len(word_embeddings) > 1:
-            for pair in itertools.combinations(word_embeddings, r=2):
+            pairs = set(list(itertools.combinations(word_embeddings, r=2)))
+            for pair in pairs:
                 scores.append(cosine(pair[0], pair[1]).item())
         else:
             # if there's one VERB in the document (which shouldn't often happen), then there's %100 similarity
@@ -379,7 +417,8 @@ class GIST:
         """
         scores = []
         if len(sentence_embeddings) > 1:
-            for pair in itertools.combinations(sentence_embeddings, r=2):
+            pairs = set(list(itertools.combinations(sentence_embeddings, r=2)))
+            for pair in pairs:
                 a = np.reshape(pair[0], (1, pair[0].size()[0]))
                 b = np.reshape(pair[1], (1, pair[1].size()[0]))
                 scores.append(cosine_similarity(a, b).item())
