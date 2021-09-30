@@ -36,6 +36,7 @@ class GIST:
 
         model_name = params['model_name']
         self.document_batch_size = params['document_batch_size']
+        self.all_synsets = {}
 
         # since documents may be longer than BERT's maximum length, we use Longformer model with maximum length of 4096
         # self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
@@ -111,7 +112,7 @@ class GIST:
                         PCREF = self._compute_PCREF(embeddings[doc_id][0])
                         SMCAUSlme = self._compute_SMCAUSlme(df_doc, embeddings[doc_id])
                         _, _, PCDC = self._find_causal_connectives(df_doc)
-                        SMCAUSwn = self._compute_SMCAUSwn(df_doc)
+                        SMCAUSwn = self._compute_SMCAUSwn(df_doc, similarity_measure='wup')
                         WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc(df_doc)
                         WRDHYPnv = self._compute_WRDHYPnv(df_doc)
                     except Exception as e:
@@ -129,6 +130,9 @@ class GIST:
                         scores["WRDHYPnv"].append(WRDHYPnv)
 
                 batch_counter += 1
+
+        # deleting the memory that we don't need anymore
+        del self.all_synsets
 
         # GIS formula
         # gis_score = PCREFz + PCDCz + (SMCAUSlsa - SMCAUSwn) - PCCNCz - zWRDIMGc - WRDHYPnv
@@ -281,7 +285,13 @@ class GIST:
 
         # getting all synsets (synonym sets) to which a verb belongs
         for verb in verbs:
-            verb_synsets[verb] = set(wn.synsets(verb, wn.VERB))
+            # check if synset is already in dictionary to avoid calling WordNet
+            if verb in self.all_synsets:
+                verb_synsets[verb] = self.all_synsets[verb]
+            else:
+                synsets = set(wn.synsets(verb, wn.VERB))
+                self.all_synsets[verb] = synsets
+                verb_synsets[verb] = synsets
 
         verb_pairs = set(list(itertools.combinations(verbs, r=2)))
 
