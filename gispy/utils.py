@@ -157,3 +157,22 @@ def get_causal_cues():
             ]
     df = df.append(cues, ignore_index=True)
     return df
+
+
+def read_megahr_concreteness_imageability():
+    """
+    reading concreteness and imageability scores for English words
+    GitHub source: https://github.com/clarinsi/megahr-crossling
+    :return: a dictionary with word as key and a list with two values for each key
+    Example:
+    megahr_dict['determinations']: [1.3778881563084102, 1.7799951096927678]
+    """
+    file_path = '../data/megahr/megahr.en.sort.i'
+    megahr_dict = {}
+    with open(file_path) as in_file:
+        for line in in_file:
+            line = line.strip().split('\t')
+            # every line should contain one word and two scores for concreteness and imageability, respectively
+            if len(line) == 3:
+                megahr_dict[line[0]] = [float(line[1]), float(line[2])]
+    return megahr_dict
