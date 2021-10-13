@@ -1,4 +1,5 @@
 {
   "model_name": "sentence-transformers/bert-base-nli-mean-tokens",
-  "document_batch_size": 5
+  "document_batch_size": 1,
+  "min_document_count": 2
 }

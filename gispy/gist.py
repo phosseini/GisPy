@@ -12,6 +12,7 @@ import torch.nn as nn
 
 from utils import find_mrc_word
 from utils import get_causal_cues
+from utils import read_megahr_concreteness_imageability
 from data_reader import convert_docs
 
 from os import listdir
@@ -24,17 +25,23 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 
 class GIST:
-    def __init__(self, docs_path='../data/documents', config_path='gist_config.json'):
+    def __init__(self, docs_path='../data/documents'):
         print('loading parameters and models...')
         self.docs_path = docs_path
+
         # loading parameters
+        config_path = 'gist_config.json'
         if os.path.exists(config_path):
             with open(config_path) as f:
                 params = json.load(f)
         else:
             raise FileNotFoundError('Please put the config file in the following path: /gist_config.json')
 
-        model_name = params['model_name']
+        # min_document_count is minimum number of documents required to compute the GIS
+        self.min_document_count = params['min_document_count']
+
+        # reading megahr
+        self.megahr_dict = read_megahr_concreteness_imageability()
         self.document_batch_size = params['document_batch_size']
         self.all_synsets = {}
 
@@ -42,14 +49,13 @@ class GIST:
         # self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
         # self.model = AutoModel.from_pretrained("bert-base-uncased", output_hidden_states=True)
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModel.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(params['model_name'])
+        self.model = AutoModel.from_pretrained(params['model_name'])
         # self.sentence_model = SentenceTransformer('bert-base-nli-mean-tokens')
 
-    def compute_scores(self, min_document_count=2):
+    def compute_scores(self):
         """
         computing the Gist Inference Score (GIS) for a collection of documents
-        :param min_document_count: minimum number of documents required to compute the GIS
         :return:
         """
 
@@ -79,7 +85,7 @@ class GIST:
                 'The document directory path you are using does not exist.\nCurrent path: {}'.format(self.docs_path))
 
         # Step 2: converting the raw text files into tokens and adding their POS tags
-        if len(df_docs) < min_document_count:
+        if len(df_docs) < self.min_document_count:
             raise Exception('There should be minimum two documents to process')
         elif self.document_batch_size > len(df_docs):
             raise Exception(
@@ -113,7 +119,7 @@ class GIST:
                         SMCAUSlme = self._compute_SMCAUSlme(df_doc, embeddings[doc_id])
                         _, _, PCDC = self._find_causal_connectives(df_doc)
                         SMCAUSwn = self._compute_SMCAUSwn(df_doc, similarity_measure='wup')
-                        WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc(df_doc)
+                        WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc_megahr(df_doc)
                         WRDHYPnv = self._compute_WRDHYPnv(df_doc)
                     except Exception as e:
                         err_flag = True
@@ -189,14 +195,10 @@ class GIST:
                     df_docs.loc[df_docs['d_id'] == doc_ids[i], score_type] = doc_score
                 d_idx += 1
 
-        try:
-            # filtering out rows for which we don't have GIS
-            df_docs = df_docs.loc[df_docs['gis'].notnull()]
-            # saving result in a csv file
-            df_docs.to_csv('results.csv')
-            print('computing GIS for all documents is done. results are saved at /results.csv')
-        except Exception as e:
-            print('error in saving the results. detail: {}'.format(e))
+        # filtering out rows for which we don't have GIS
+        df_docs = df_docs.loc[df_docs['gis'].notnull()]
+
+        return df_docs
 
     @staticmethod
     def _get_doc_sentences(df_doc):
@@ -343,7 +345,7 @@ class GIST:
                 scores.append(0)
         return sum(scores) / len(scores)
 
-    def _compute_WRDCNCc_WRDIMGc(self, df_doc):
+    def _compute_WRDCNCc_WRDIMGc_mrc(self, df_doc):
         """
         computing the document concreteness and imageability
         :return:
@@ -363,6 +365,25 @@ class GIST:
                 conc_score += (word_conc_score / len(records))
                 img_score += (word_img_score / len(records))
         return conc_score / len(df_doc), img_score / len(df_doc)
+
+    def _compute_WRDCNCc_WRDIMGc_megahr(self, df_doc):
+        """
+        computing the document concreteness and imageability
+        :return:
+        """
+        concreteness_scores = []
+        imageability_scores = []
+        for index, row in df_doc.iterrows():
+            token_text = row['token_text'].lower()
+            if token_text in self.megahr_dict:
+                concreteness_scores.append(self.megahr_dict[token_text][0])
+                imageability_scores.append(self.megahr_dict[token_text][1])
+
+        if len(concreteness_scores) > 0 and len(imageability_scores) > 0:
+            return sum(concreteness_scores) / len(concreteness_scores), sum(imageability_scores) / len(
+                imageability_scores)
+        else:
+            return 0, 0
 
     def _compute_SMCAUSlme(self, df_doc, doc_embedding, pos_tags=['VERB']):
         """
