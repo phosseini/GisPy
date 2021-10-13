@@ -6,8 +6,8 @@ Our goal is to develop a tool and metric that estimates the capacity of text in 
 
 ### How to run GisPy
 * Put all text documents separately as `.txt` files (one document per file) in the `/data/documents` folder.
-* Now, run the following class: [`/gispy/run.py`](https://github.com/phosseini/gispy/blob/master/gispy/run.py)
-* Results will be saved at: `/gispy/results.csv`
+* Now, run [`/gispy/run.py`](https://github.com/phosseini/gispy/blob/master/gispy/run.py) class: `python run.py [OUTPUT_FILE_NAME]`
+    * `OUTPUT_FILE_NAME`: name of the output file in `.csv` format where results will be saved.
 
 ### Gist Inference Score (GIS) formula
 
