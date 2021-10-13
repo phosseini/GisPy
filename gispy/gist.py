@@ -373,6 +373,11 @@ class GIST:
         """
         concreteness_scores = []
         imageability_scores = []
+
+        # filtering out tokens we don't need
+        pos_filter = ['NUM', 'PUNCT', 'SYM']
+        df_doc = df_doc.loc[~df_doc['token_pos'].isin(pos_filter)]
+
         for index, row in df_doc.iterrows():
             token_text = row['token_text'].lower()
             if token_text in self.megahr_dict:
