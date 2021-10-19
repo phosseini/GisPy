@@ -242,11 +242,11 @@ class GIST:
         # compile the patterns
         patterns = []
         for idx, row in causal_cues.iterrows():
-            patterns.append(re.compile(r'' + row['cue_regex'] + ''))
+            patterns.append(re.compile(r'' + row['cue_regex'].lower() + ''))
         sentences = self._get_doc_sentences(df_doc)
         for sentence in sentences:
             for pattern in patterns:
-                if bool(pattern.match(sentence)):
+                if bool(pattern.match(sentence.lower())):
                     causal_connectives_count += 1
                     matched_patterns.append(pattern)
         return causal_connectives_count, matched_patterns, causal_connectives_count / len(sentences)
