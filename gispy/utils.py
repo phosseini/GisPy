@@ -1,6 +1,54 @@
+import time
+import wayback
 import pandas as pd
-from sqlalchemy import create_engine, MetaData, Table, and_
+import xml.etree.ElementTree as ET
+
+from bs4 import BeautifulSoup
+from bs4.element import Comment
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, MetaData, Table, and_
+
+
+def get_wayback_url_content(urls, sleep_time=0, progress_index=20):
+    """
+    finding the wayback url of a list of urls
+    :param urls: a list of strings of urls
+    :param sleep_time: time in second between two wayback api calls
+    :param progress_index: an integer used for showing how many urls are processed
+    :return:
+    """
+    wayback_urls = []
+    all_content = []
+    client = wayback.WaybackClient()
+
+    for i in range(len(urls)):
+        time.sleep(sleep_time)
+        try:
+            results = client.search(urls[i])
+            results = list(results)
+        except:
+            wayback_urls.append('')
+            all_content.append('')
+            continue
+        if len(results) > 0:
+            record = results[-1]
+            try:
+                response = client.get_memento(record.raw_url)
+                content = response.content.decode()
+                wayback_urls.append(record.raw_url)
+                all_content.append(content)
+            except:
+                # if there's any error when getting the memento, we at least want to have the wayback url
+                wayback_urls.append(record.raw_url)
+                all_content.append('')
+                pass
+        else:
+            # there's no wayback url available
+            wayback_urls.append('')
+            all_content.append('')
+        if i % progress_index == 0:
+            print(i)
+    return wayback_urls, all_content
 
 
 def find_mrc_word(word, pos):
@@ -176,3 +224,22 @@ def read_megahr_concreteness_imageability():
             if len(line) == 3:
                 megahr_dict[line[0]] = [float(line[1]), float(line[2])]
     return megahr_dict
+
+
+def get_connectives_list():
+    """
+    getting list of connectives from PDTB2
+    :return:
+    """
+    with open('../data/en_dimlex.xml', 'r') as in_file:
+        data = in_file.read()
+    root = ET.fromstring(data)
+    connectives = []
+    for child in root.iter('entry'):
+        for s_child in child.iter('syn'):
+            for s_s_child in s_child.iter('sem'):
+                connectives.append([child.attrib['word'], s_s_child[0].attrib['sense']])
+    return connectives
+
+# connectives = get_connectives_list()
+# [print(connective) for connective in connectives]
