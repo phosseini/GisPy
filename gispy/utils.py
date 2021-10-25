@@ -3,13 +3,33 @@ import wayback
 import pandas as pd
 import xml.etree.ElementTree as ET
 
+from typing import Tuple
 from bs4 import BeautifulSoup
 from bs4.element import Comment
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, MetaData, Table, and_
 
 
-def get_wayback_url_content(urls, sleep_time=0, progress_index=20):
+def get_wayback_urls(urls: list, progress_index=20) -> dict:
+    """
+    finding the wayback urls of a list of urls
+    :return: a dictionary with a single url as key and a list of wayback urls for the url as value
+    """
+    client = wayback.WaybackClient()
+    urls = list(set(urls))  # removing duplicate since we use url as key in the dictionary
+    wayback_urls = {}
+    for i in range(len(urls)):
+        try:
+            wayback_urls[urls[i]] = [result.raw_url for result in list(client.search(urls[i]))]
+        except:
+            wayback_urls[urls[i]] = []
+            pass
+        if i % progress_index == 0:
+            print(i)
+    return wayback_urls
+
+
+def get_wayback_url_content(urls: list, sleep_time=0, progress_index=20) -> Tuple[list, list]:
     """
     finding the wayback url of a list of urls
     :param urls: a list of strings of urls
@@ -17,9 +37,9 @@ def get_wayback_url_content(urls, sleep_time=0, progress_index=20):
     :param progress_index: an integer used for showing how many urls are processed
     :return:
     """
+    client = wayback.WaybackClient()
     wayback_urls = []
     all_content = []
-    client = wayback.WaybackClient()
 
     for i in range(len(urls)):
         time.sleep(sleep_time)
@@ -226,7 +246,7 @@ def read_megahr_concreteness_imageability():
     return megahr_dict
 
 
-def get_connectives_list():
+def get_connectives_list(relation_filter=[]):
     """
     getting list of connectives from PDTB2
     :return:
@@ -238,8 +258,8 @@ def get_connectives_list():
     for child in root.iter('entry'):
         for s_child in child.iter('syn'):
             for s_s_child in s_child.iter('sem'):
-                connectives.append([child.attrib['word'], s_s_child[0].attrib['sense']])
+                relation_word = child.attrib['word']
+                relation_type = s_s_child[0].attrib['sense']
+                if len(relation_filter) == 0 or (len(relation_filter) != 0 and relation_type in relation_filter):
+                    connectives.append([relation_word, relation_type])
     return connectives
-
-# connectives = get_connectives_list()
-# [print(connective) for connective in connectives]
