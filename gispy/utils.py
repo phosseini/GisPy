@@ -10,17 +10,19 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, MetaData, Table, and_
 
 
-def get_wayback_urls(urls: list, progress_index=20) -> dict:
+def get_wayback_urls(urls: list, sleep_time=1, progress_index=20) -> dict:
     """
     finding the wayback urls of a list of urls
     :return: a dictionary with a single url as key and a list of wayback urls for the url as value
     """
-    client = wayback.WaybackClient()
     urls = list(set(urls))  # removing duplicate since we use url as key in the dictionary
     wayback_urls = {}
+    client = wayback.WaybackClient()
     for i in range(len(urls)):
+        time.sleep(sleep_time)
         try:
-            wayback_urls[urls[i]] = [result.raw_url for result in list(client.search(urls[i]))]
+            results = client.search(urls[i])
+            wayback_urls[urls[i]] = [result.raw_url for result in list(results)]
         except:
             wayback_urls[urls[i]] = []
             pass
