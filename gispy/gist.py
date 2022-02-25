@@ -54,8 +54,8 @@ class GIST:
         computing the Gist Inference Score (GIS) for a collection of documents
         :return:
         """
-        indices_cols = ["PCREF", "PCDC", "SMCAUSlme", "SMCAUSwn", "WRDCNCc", "WRDIMGc", "WRDHYPnv"]
-        df_cols = ["d_id", "text", "gis", "gis_zscore"]
+        indices_cols = ["PCREF", "PCDC", "SMCAUSlsa", "SMCAUSwn", "PCCNC", "WRDIMGc", "WRDHYPnv"]
+        df_cols = ["d_id", "text"]
         df_cols.extend(indices_cols)
         df_docs = pd.DataFrame(columns=df_cols)
         docs_with_errors = []
@@ -63,6 +63,7 @@ class GIST:
         if os.path.isdir(self.docs_path):
             txt_files = [f for f in listdir(self.docs_path) if isfile(join(self.docs_path, f)) and '.txt' in f]
             print('total # of documents: {}'.format(len(txt_files)))
+            print('computing indices for documents...')
             for i, txt_file in enumerate(txt_files):
                 with open('{}/{}'.format(self.docs_path, txt_file), 'r') as input_file:
                     doc_text = input_file.read()
@@ -70,65 +71,27 @@ class GIST:
                     doc_sentences = self._get_doc_sentences(df_doc)
                     sentence_embeddings = list(self.sentence_model.encode(doc_sentences))
                     assert len(sentence_embeddings) == len(doc_sentences)
-                    err_flag = False
                     try:
                         PCREF = self._compute_PCREF(sentence_embeddings)
                         SMCAUSlme = self._compute_SMCAUSlme(df_doc, token_embeddings)
                         _, _, PCDC = self._find_causal_connectives(doc_sentences)
                         SMCAUSwn = self._compute_SMCAUSwn(df_doc, similarity_measure='wup')
                         WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc_megahr(df_doc)
-                        err_flag = True if WRDCNCc is None and WRDIMGc is None else err_flag
                         WRDHYPnv = self._compute_WRDHYPnv(df_doc)
-                        print('file #{} done'.format(i + 1))
+                        print('#{} done'.format(i + 1))
+                        df_docs = df_docs.append(
+                            {"d_id": txt_file, "text": doc_text, "PCREF": PCREF, "PCDC": PCDC, "SMCAUSlsa": SMCAUSlme,
+                             "SMCAUSwn": SMCAUSwn, "PCCNC": WRDCNCc, "WRDIMGc": WRDIMGc, "WRDHYPnv": WRDHYPnv},
+                            ignore_index=True)
                     except Exception as e:
-                        err_flag = True
                         docs_with_errors.append(txt_file)
 
-                    # checking if all the indices are computed without any error
-                    if not err_flag:
-                        df_docs = df_docs.append(
-                            {"d_id": txt_file, "text": doc_text, "PCREF": PCREF, "PCDC": PCDC, "SMCAUSlme": SMCAUSlme,
-                             "SMCAUSwn": SMCAUSwn, "WRDCNCc": WRDCNCc, "WRDIMGc": WRDIMGc, "WRDHYPnv": WRDHYPnv},
-                            ignore_index=True)
         else:
             raise Exception(
                 'The document directory path you are using does not exist.\nCurrent path: {}'.format(self.docs_path))
 
-        # GIS formula
-        # gis_score = PCREFz + PCDCz + (SMCAUSlsa - SMCAUSwn) - PCCNCz - zWRDIMGc - WRDHYPnv
-        normalized_scores = dict()
-        for col in indices_cols:
-            normalized_scores[col] = list()
-        z_scores = dict()
-        print('normalizing values of indices...')
-        if len(df_docs) != 0:
-            for idx_name in indices_cols:
-                # saving the z-score
-                z_scores[idx_name] = zscore(list(df_docs[idx_name]))
-                # computing the normalized score in [0, 1] range
-                normalized_scores[idx_name] = [float(i) / sum(list(df_docs[idx_name])) for i in list(df_docs[idx_name])]
-        else:
-            raise Exception(
-                'there is no score computed to normalize. check the /error_log.txt to see the detailed errors')
-
-        # computing Gist Inference Score (GIS) for documents
-        print('computing the final GIS...')
-        score_types = {'gis': normalized_scores, 'gis_zscore': z_scores}
-        # we define d_idx since number of all documents may not be same (due to errors)
-        # as documents for which we have computed scores
-        d_idx = 0
-        for i, txt_file in enumerate(txt_files):
-            if txt_file not in docs_with_errors:
-                # computing different scores for the document
-                for score_type, scores in score_types.items():
-                    doc_score = scores["PCREF"][d_idx] + scores["PCDC"][d_idx] + (
-                            scores["SMCAUSlme"][d_idx] - scores["SMCAUSwn"][d_idx]) - scores["WRDCNCc"][d_idx] - \
-                                scores["WRDIMGc"][d_idx] - scores["WRDHYPnv"][d_idx]
-                    df_docs.loc[df_docs['d_id'] == txt_file, score_type] = doc_score
-                d_idx += 1
-
-        # filtering out rows for which we don't have GIS
-        df_docs = df_docs.loc[df_docs['gis'].notnull()]
+        print('computing indices for documents is done.')
+        print('# of documents with error: {}'.format(len(docs_with_errors)))
 
         return df_docs
 
@@ -392,12 +355,21 @@ class GIS:
                               'WRDIMGc': {'mean': 410.346, 'sd': 24.994},
                               'WRDHYPnv': {'mean': 1.843, 'sd': 0.26}}
 
-    def score(self, df, wolfe=False):
+    def _z_score(self, df, index_name, wolfe=False):
+        if wolfe:
+            params = self.wolfe_mean_sd[index_name]
+            return df[index_name].map(lambda x: (x - params['mean']) / params['sd'])
+        else:
+            return zscore(df[index_name])
+
+    def score(self, df, wolfe=False, gispy=False):
         """
         computing Gist Inference Score (GIS) based on the following paper:
         https://link.springer.com/article/10.3758/s13428-019-01284-4
+        use this method when values of indices are computed using CohMetrix
         :param df: a dataframe that contains coh-metrix indices
         :param wolfe: whether using wolfe's mean and standard deviation for computing z-score
+        :param gispy: whether indices are computed by gispy or not (if not gispy, indices should be computed by CohMetrix)
         :return: the input dataframe with an extra column named "GIS" that stores gist inference score
         """
 
@@ -414,17 +386,17 @@ class GIS:
         # μ: population mean
         # σ: population standard deviation
 
-        def z_score(df_col, params):
-            if wolfe:
-                return df_col.map(lambda x: (x - params['mean']) / params['sd'])
-            else:
-                return zscore(df_col)
-
         # computing z-scores
-        df["zSMCAUSlsa"] = z_score(df['SMCAUSlsa'], self.wolfe_mean_sd['SMCAUSlsa'])
-        df["zSMCAUSwn"] = z_score(df['SMCAUSwn'], self.wolfe_mean_sd['SMCAUSwn'])
-        df["zWRDIMGc"] = z_score(df['WRDIMGc'], self.wolfe_mean_sd['WRDIMGc'])
-        df["zWRDHYPnv"] = z_score(df['WRDHYPnv'], self.wolfe_mean_sd['WRDHYPnv'])
+        df["zSMCAUSlsa"] = self._z_score(df, index_name='SMCAUSlsa', wolfe=wolfe)
+        df["zSMCAUSwn"] = self._z_score(df, index_name='SMCAUSwn', wolfe=wolfe)
+        df["zWRDIMGc"] = self._z_score(df, index_name='WRDIMGc', wolfe=wolfe)
+        df["zWRDHYPnv"] = self._z_score(df, index_name='WRDHYPnv', wolfe=wolfe)
+
+        if gispy:
+            # since wolfe doesn't have mean and sd for the following indices, we go with wolfe=False here
+            df["PCREFz"] = self._z_score(df, index_name='PCREF')
+            df["PCDCz"] = self._z_score(df, index_name='PCDC')
+            df["PCCNCz"] = self._z_score(df, index_name='PCCNC')
 
         # computing the Gist Inference Score (GIS)
         for idx, row in df.iterrows():
@@ -436,6 +408,6 @@ class GIS:
             zWRDIMGc = row["zWRDIMGc"]
             zWRDHYPnv = row["zWRDHYPnv"]
             gis = PCREFz + PCDCz + (zSMCAUSlsa - zSMCAUSwn) - PCCNCz - zWRDIMGc - zWRDHYPnv
-            df.loc[idx, "GIS"] = gis
+            df.loc[idx, "gis"] = gis
 
         return df
