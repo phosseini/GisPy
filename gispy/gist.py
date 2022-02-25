@@ -133,21 +133,45 @@ class GIST:
         return df_docs
 
     @staticmethod
-    def _get_doc_sentences(df_doc):
-        sentences = []
-        current_sentence = ""
-        current_sentence_idx = 0
-        for i in range(len(df_doc)):
-            if df_doc.iloc[i]['s_id'] == current_sentence_idx:
-                current_sentence += df_doc.iloc[i]['token_text'] + ' '
-            else:
-                # end of current sentence
-                sentences.append(current_sentence.strip())
+    def _get_sentences_count(df_doc):
+        """
+        get the count of all sentences in a document
+        :param df_doc:
+        :return:
+        """
+        sents_count = 0
+        paragraph_ids = df_doc['p_id'].unique()
+        for p_id in paragraph_ids:
+            paragraph_df = df_doc.loc[df_doc['p_id'] == p_id]
+            paragraph_sents_count = len(paragraph_df['s_id'].unique())
+            sents_count += paragraph_sents_count
+        return sents_count
 
-                # reset variables for the next sentence
-                current_sentence = ""
-                if i < len(df_doc) - 1:
-                    current_sentence_idx = df_doc.iloc[i + 1]['s_id']
+    def _get_doc_sentences(self, df_doc):
+        """
+        get list of sentences in a document
+        :param df_doc:
+        :return:
+        """
+        sentences = list()
+        current_sentence = str()
+        df_doc.reset_index()
+        p_ids = df_doc['p_id'].unique()
+        for p_id in p_ids:
+            df_paragraph = df_doc.loc[df_doc['p_id'] == p_id]
+            current_s_id = 0
+            for idx, row in df_paragraph.iterrows():
+                if row['s_id'] == current_s_id:
+                    current_sentence += row['token_text'] + ' '
+                else:
+                    # end of current sentence, save it first
+                    sentences.append(current_sentence.strip())
+                    # reset variables for the next sentence
+                    current_sentence = ""
+                    current_s_id += 1
+            # saving the last sentence
+            sentences.append(current_sentence.strip())
+        assert len(sentences) == self._get_sentences_count(df_doc)
         return sentences
 
     @staticmethod
