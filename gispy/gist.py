@@ -1,27 +1,19 @@
 import os
 import re
-import copy
 import json
-import torch
-import itertools
-# import statistics
-import numpy as np
-import pandas as pd
 import numbers
-import torch.nn as nn
+import itertools
+import pandas as pd
+
+from os import listdir
+from os.path import isfile, join
+from nltk.corpus import wordnet as wn
+from sentence_transformers import SentenceTransformer, util
 
 from utils import find_mrc_word
 from utils import get_causal_cues
 from utils import read_megahr_concreteness_imageability
 from data_reader import convert_doc
-
-from os import listdir
-from scipy.stats import zscore
-from os.path import isfile, join
-from nltk.corpus import wordnet as wn
-from transformers import AutoModel, AutoTokenizer
-from sentence_transformers import SentenceTransformer, util
-from sklearn.metrics.pairwise import cosine_similarity
 
 
 class GIST:
@@ -356,11 +348,9 @@ class GIS:
                               'WRDHYPnv': {'mean': 1.843, 'sd': 0.26}}
 
     def _z_score(self, df, index_name, wolfe=False):
-        if wolfe:
-            params = self.wolfe_mean_sd[index_name]
-            return df[index_name].map(lambda x: (x - params['mean']) / params['sd'])
-        else:
-            return zscore(df[index_name])
+        (mean, sd) = (self.wolfe_mean_sd[index_name]['mean'], self.wolfe_mean_sd[index_name]['sd']) if wolfe else (df[index_name].mean(), df[index_name].std())
+        z_scores = df[index_name].map(lambda x: (x - mean) / sd)
+        return z_scores
 
     def score(self, df, wolfe=False, gispy=False):
         """
@@ -386,7 +376,7 @@ class GIS:
         # μ: population mean
         # σ: population standard deviation
 
-        # computing z-scores
+        # computing z-scores (these are the columns for which we don't have zscores, neither in CohMetrix nor in Gispy)
         df["zSMCAUSlsa"] = self._z_score(df, index_name='SMCAUSlsa', wolfe=wolfe)
         df["zSMCAUSwn"] = self._z_score(df, index_name='SMCAUSwn', wolfe=wolfe)
         df["zWRDIMGc"] = self._z_score(df, index_name='WRDIMGc', wolfe=wolfe)
