@@ -6,6 +6,7 @@ import itertools
 import pandas as pd
 
 from os import listdir
+import scipy.stats as stats
 from os.path import isfile, join
 from nltk.corpus import wordnet as wn
 from sentence_transformers import SentenceTransformer, util
@@ -348,9 +349,11 @@ class GIS:
                               'WRDHYPnv': {'mean': 1.843, 'sd': 0.26}}
 
     def _z_score(self, df, index_name, wolfe=False):
-        (mean, sd) = (self.wolfe_mean_sd[index_name]['mean'], self.wolfe_mean_sd[index_name]['sd']) if wolfe else (df[index_name].mean(), df[index_name].std())
-        z_scores = df[index_name].map(lambda x: (x - mean) / sd)
-        return z_scores
+        if wolfe:
+            return df[index_name].map(
+                lambda x: (x - self.wolfe_mean_sd[index_name]['mean']) / self.wolfe_mean_sd[index_name]['sd'])
+        else:
+            return stats.zscore(df[index_name], nan_policy='omit')
 
     def score(self, df, wolfe=False, gispy=False):
         """
