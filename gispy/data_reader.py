@@ -174,14 +174,9 @@ def convert_doc(doc_text):
     :return:
     """
 
-    def normalize_text(input_text):
-        input_text = re.sub(r'\n+', '\n', input_text).strip()
-        return input_text
-
     # u_id: unique identifier
     df_doc = pd.DataFrame(columns=["u_id", "p_id", "s_id", "token_id", "token_text", "token_lemma", "token_pos"])
     token_embeddings = dict()
-    doc_text = normalize_text(doc_text)
     paragraphs = doc_text.split('\n')
     p_id = 0
     u_id = 0

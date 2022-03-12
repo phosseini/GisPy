@@ -3,12 +3,14 @@ import re
 import json
 import numbers
 import itertools
+import statistics
 import pandas as pd
 
 from os import listdir
 import scipy.stats as stats
 from os.path import isfile, join
 from nltk.corpus import wordnet as wn
+from stanza.server import CoreNLPClient
 from sentence_transformers import SentenceTransformer, util
 
 from utils import find_mrc_word
@@ -42,46 +44,69 @@ class GIST:
 
         self.sentence_model = SentenceTransformer(params['sentence_transformers_model'])
 
+    @staticmethod
+    def _clean_text(text):
+        encoded_text = text.encode("ascii", "ignore")
+        text = encoded_text.decode()
+        text = re.sub(' +', ' ', text)
+        text = re.sub(r'\n+', '\n', text).strip()
+        return text
+
     def compute_scores(self):
         """
         computing the Gist Inference Score (GIS) for a collection of documents
         :return:
         """
-        indices_cols = ["PCREF", "PCDC", "SMCAUSlsa", "SMCAUSwn", "PCCNC", "WRDIMGc", "WRDHYPnv"]
+        indices_cols = ["CoreREF", "PCREF", "PCDC", "SMCAUSlsa", "SMCAUSwn", "PCCNC", "WRDIMGc", "WRDHYPnv"]
         df_cols = ["d_id", "text"]
         df_cols.extend(indices_cols)
         df_docs = pd.DataFrame(columns=df_cols)
-        docs_with_errors = []
-
-        if os.path.isdir(self.docs_path):
-            txt_files = [f for f in listdir(self.docs_path) if isfile(join(self.docs_path, f)) and '.txt' in f]
-            print('total # of documents: {}'.format(len(txt_files)))
-            print('computing indices for documents...')
-            for i, txt_file in enumerate(txt_files):
-                with open('{}/{}'.format(self.docs_path, txt_file), 'r') as input_file:
-                    doc_text = input_file.read()
-                    df_doc, token_embeddings = convert_doc(doc_text)
-                    doc_sentences = self._get_doc_sentences(df_doc)
-                    sentence_embeddings = list(self.sentence_model.encode(doc_sentences))
-                    assert len(sentence_embeddings) == len(doc_sentences)
-                    try:
-                        PCREF = self._compute_PCREF(sentence_embeddings)
-                        SMCAUSlme = self._compute_SMCAUSlme(df_doc, token_embeddings)
-                        _, _, PCDC = self._find_causal_connectives(doc_sentences)
-                        SMCAUSwn = self._compute_SMCAUSwn(df_doc, similarity_measure='wup')
-                        WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc_megahr(df_doc)
-                        WRDHYPnv = self._compute_WRDHYPnv(df_doc)
-                        print('#{} done'.format(i + 1))
-                        df_docs = df_docs.append(
-                            {"d_id": txt_file, "text": doc_text, "PCREF": PCREF, "PCDC": PCDC, "SMCAUSlsa": SMCAUSlme,
-                             "SMCAUSwn": SMCAUSwn, "PCCNC": WRDCNCc, "WRDIMGc": WRDIMGc, "WRDHYPnv": WRDHYPnv},
-                            ignore_index=True)
-                    except Exception as e:
-                        docs_with_errors.append(txt_file)
-
-        else:
-            raise Exception(
-                'The document directory path you are using does not exist.\nCurrent path: {}'.format(self.docs_path))
+        docs_with_errors = list()
+        with CoreNLPClient(
+                annotators=['tokenize', 'ssplit', 'pos', 'lemma', 'ner', 'parse', 'coref'],
+                threads=8,
+                timeout=60000,
+                memory='20G',
+                be_quiet=True) as client:
+            if os.path.isdir(self.docs_path):
+                txt_files = [f for f in listdir(self.docs_path) if isfile(join(self.docs_path, f)) and '.txt' in f]
+                print('total # of documents: {}'.format(len(txt_files)))
+                print('computing indices for documents...')
+                for i, txt_file in enumerate(txt_files):
+                    with open('{}/{}'.format(self.docs_path, txt_file), 'r') as input_file:
+                        doc_text = input_file.read()
+                        doc_text = self._clean_text(doc_text)
+                        # -------------------------------
+                        # finding the coref using corenlp
+                        ann = client.annotate(doc_text)
+                        chain_count = len(list(ann.corefChain))
+                        sentences_count = len(list(ann.sentence))
+                        CoreREF = chain_count / sentences_count
+                        # -------------------------------
+                        df_doc, token_embeddings = convert_doc(doc_text)
+                        doc_sentences = self._get_doc_sentences(df_doc)
+                        sentence_embeddings = dict()
+                        for p_id, sentences in doc_sentences.items():
+                            sentence_embeddings[p_id] = list(self.sentence_model.encode(sentences))
+                        try:
+                            PCREF = self._compute_PCREF(sentence_embeddings)
+                            SMCAUSlme = self._compute_SMCAUSlme(df_doc, token_embeddings)
+                            _, _, PCDC = self._find_causal_connectives(doc_sentences)
+                            SMCAUSwn = self._compute_SMCAUSwn(df_doc, similarity_measure='wup')
+                            WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc_megahr(df_doc)
+                            WRDHYPnv = self._compute_WRDHYPnv(df_doc)
+                            print('#{} done'.format(i + 1))
+                            df_docs = df_docs.append(
+                                {"d_id": txt_file, "text": doc_text, "CoreREF": CoreREF, "PCREF": PCREF, "PCDC": PCDC,
+                                 "SMCAUSlsa": SMCAUSlme, "SMCAUSwn": SMCAUSwn, "PCCNC": WRDCNCc, "WRDIMGc": WRDIMGc,
+                                 "WRDHYPnv": WRDHYPnv}, ignore_index=True)
+                        except Exception as e:
+                            docs_with_errors.append(txt_file)
+                            print(e)
+            else:
+                raise Exception(
+                    'The document directory path you are using does not exist.\nCurrent path: {}'.format(
+                        self.docs_path))
 
         print('computing indices for documents is done.')
         print('# of documents with error: {}'.format(len(docs_with_errors)))
@@ -109,11 +134,12 @@ class GIST:
         :param df_doc:
         :return:
         """
-        sentences = list()
+        sentences = dict()
         current_sentence = str()
         df_doc.reset_index()
         p_ids = df_doc['p_id'].unique()
         for p_id in p_ids:
+            sentences[p_id] = list()
             df_paragraph = df_doc.loc[df_doc['p_id'] == p_id]
             current_s_id = 0
             for idx, row in df_paragraph.iterrows():
@@ -121,18 +147,19 @@ class GIST:
                     current_sentence += row['token_text'] + ' '
                 else:
                     # end of current sentence, save it first
-                    sentences.append(current_sentence.strip())
+                    sentences[p_id].append(current_sentence.strip())
                     # reset variables for the next sentence
                     current_sentence = ""
                     current_s_id += 1
             # saving the last sentence
-            sentences.append(current_sentence.strip())
-        assert len(sentences) == self._get_sentences_count(df_doc)
+            sentences[p_id].append(current_sentence.strip())
+        len_sentences = sum([len(sentences[pid]) for pid in sentences.keys()])
+        assert len_sentences == self._get_sentences_count(df_doc)
         return sentences
 
     @staticmethod
     def _find_causal_verbs(df_doc):
-        causal_verbs = []
+        causal_verbs = list()
         verbs = list(df_doc.loc[df_doc['token_pos'] == 'VERB'].token_lemma)
         for verb in verbs:
             verb_synsets = list(set(wn.synsets(verb, wn.VERB)))
@@ -148,38 +175,17 @@ class GIST:
         finding the number of causal connectives in sentences in a document
         :return:
         """
+        sentences_count = 0
         causal_connectives_count = 0
         matched_patterns = list()
-        for sentence in sentences:
-            for pattern in self.causal_patterns:
-                if bool(pattern.match(sentence.lower())):
-                    causal_connectives_count += 1
-                    matched_patterns.append(pattern)
-        return causal_connectives_count, matched_patterns, causal_connectives_count / len(sentences)
-
-    def _compute_SMCAUSwn_v1(self, df_doc):
-        """
-        computing the WordNet Verb Overlap in a document
-        :return:
-        """
-        # getting all unique VERBs in a document
-        verbs = set(list(df_doc.loc[df_doc['token_pos'] == 'VERB'].token_lemma))
-        verb_synsets = {}
-
-        # getting all synsets (synonym sets) to which a verb belongs
-        for verb in verbs:
-            verb_synsets[verb] = set(wn.synsets(verb, wn.VERB))
-
-        n_overlaps = 0
-        if len(verbs) > 1:
-            pairs = set(list(itertools.combinations(verbs, r=2)))
-            for pair in pairs:
-                if verb_synsets[pair[0]] & verb_synsets[pair[1]]:
-                    n_overlaps += 1
-        else:
-            return 1
-
-        return n_overlaps / len(pairs)
+        for p_id, p_sentences in sentences.items():
+            for sentence in p_sentences:
+                sentences_count += 1
+                for pattern in self.causal_patterns:
+                    if bool(pattern.match(sentence.lower())):
+                        causal_connectives_count += 1
+                        matched_patterns.append(pattern)
+        return causal_connectives_count, matched_patterns, causal_connectives_count / sentences_count
 
     def _compute_SMCAUSwn(self, df_doc, similarity_measure='path'):
         """
@@ -329,16 +335,48 @@ class GIST:
         :param sentence_embeddings: embeddings of sentences in a document
         :return:
         """
-        scores = []  # sentence transformers cosine similarity scores
-        if len(sentence_embeddings) > 1:
-            pairs = itertools.combinations(sentence_embeddings, r=2)
+
+        def get_consecutive_cosine(embeddings_list):
+            i = 0
+            scores = list()
+            while i < len(embeddings_list) - 1:
+                scores.append(util.cos_sim(embeddings_list[i], embeddings_list[i + 1]).item())
+                i += 1
+            return scores
+
+        def get_all_pairs_cosine(embeddings_list):
+            scores = list()
+            pairs = itertools.combinations(embeddings_list, r=2)
             for pair in pairs:
                 scores.append((util.cos_sim(pair[0], pair[1]).item()))
-        else:
-            # if there is only one sentence in the document, then there is %100 referential cohesion
-            return 1
+            return scores
 
-        return sum(scores) / len(scores)
+        all_embeddings = list()
+
+        # flattening the embedding list
+        for p_id, embeddings in sentence_embeddings.items():
+            for embedding in embeddings:
+                all_embeddings.append(embedding)
+        scores_1 = get_consecutive_cosine(all_embeddings)
+        all_sentences_consecutive_cosine = statistics.mean(scores_1) if len(scores_1) > 0 else 1
+
+        scores_2 = get_all_pairs_cosine(all_embeddings)
+        all_sentences_pair_cosine = statistics.mean(scores_2) if len(scores_2) > 0 else 1
+
+        scores_1 = dict()
+        scores_2 = dict()
+        # local among all sentence pairs in paragraphs
+        for p_id, embeddings in sentence_embeddings.items():
+            scores_1[p_id] = get_consecutive_cosine(embeddings)
+            scores_2[p_id] = get_all_pairs_cosine(embeddings)
+
+        all_sentences_consecutive_cosine_p = statistics.mean(
+            [statistics.mean(scores_1[p_id]) for p_id in scores_1.keys() if len(scores_1[p_id]) > 0])
+        all_sentences_pair_cosine_p = statistics.mean(
+            [statistics.mean(scores_2[p_id]) for p_id in scores_2.keys() if len(scores_2[p_id]) > 0])
+        return statistics.mean(
+            [all_sentences_consecutive_cosine, all_sentences_pair_cosine, all_sentences_consecutive_cosine_p,
+             all_sentences_pair_cosine_p])
 
 
 class GIS:
@@ -387,13 +425,14 @@ class GIS:
 
         if gispy:
             # since wolfe doesn't have mean and sd for the following indices, we go with wolfe=False here
+            df["CoreREFz"] = self._z_score(df, index_name='CoreREF')
             df["PCREFz"] = self._z_score(df, index_name='PCREF')
             df["PCDCz"] = self._z_score(df, index_name='PCDC')
             df["PCCNCz"] = self._z_score(df, index_name='PCCNC')
 
         # computing the Gist Inference Score (GIS)
         for idx, row in df.iterrows():
-            PCREFz = row["PCREFz"]
+            PCREFz = row["PCREFz"] + row["CoreREFz"] if gispy else row["PCREFz"]
             PCDCz = row["PCDCz"]
             PCCNCz = row["PCCNCz"]
             zSMCAUSlsa = row["zSMCAUSlsa"]
