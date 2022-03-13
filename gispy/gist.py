@@ -45,6 +45,23 @@ class GIST:
         self.sentence_model = SentenceTransformer(params['sentence_transformers_model'])
 
     @staticmethod
+    def _consecutive_cosine(embeddings):
+        i = 0
+        scores = list()
+        while i < len(embeddings) - 1:
+            scores.append(util.cos_sim(embeddings[i], embeddings[i + 1]).item())
+            i += 1
+        return scores
+
+    @staticmethod
+    def _all_pairs_cosine(embeddings):
+        scores = list()
+        pairs = itertools.combinations(embeddings, r=2)
+        for pair in pairs:
+            scores.append((util.cos_sim(pair[0], pair[1]).item()))
+        return scores
+
+    @staticmethod
     def _clean_text(text):
         encoded_text = text.encode("ascii", "ignore")
         text = encoded_text.decode()
@@ -149,13 +166,41 @@ class GIST:
                     # end of current sentence, save it first
                     sentences[p_id].append(current_sentence.strip())
                     # reset variables for the next sentence
-                    current_sentence = ""
+                    current_sentence = row['token_text'] + ' '
                     current_s_id += 1
             # saving the last sentence
             sentences[p_id].append(current_sentence.strip())
         len_sentences = sum([len(sentences[pid]) for pid in sentences.keys()])
         assert len_sentences == self._get_sentences_count(df_doc)
         return sentences
+
+    def _get_doc_token_ids_by_sentence(self, df_doc):
+        """
+        get list of token ids of sentences in a document
+        :param df_doc:
+        :return:
+        """
+        sentences_tokens = dict()
+        df_doc.reset_index()
+        p_ids = df_doc['p_id'].unique()
+        for p_id in p_ids:
+            current_sentence = list()
+            df_paragraph = df_doc.loc[df_doc['p_id'] == p_id]
+            current_s_id = 0
+            for idx, row in df_paragraph.iterrows():
+                if row['s_id'] == current_s_id:
+                    current_sentence.append(row['u_id'])
+                else:
+                    # end of current sentence, save it first
+                    sentences_tokens['{}_{}'.format(p_id, current_s_id)] = current_sentence
+                    # reset variables for the next sentence
+                    current_sentence = [row['u_id']]
+                    current_s_id += 1
+            # saving the last sentence
+            sentences_tokens['{}_{}'.format(p_id, current_s_id)] = current_sentence
+        tokens_count = sum([len(v) for k, v in sentences_tokens.items()])
+        assert tokens_count == len(df_doc)
+        return sentences_tokens
 
     @staticmethod
     def _find_causal_verbs(df_doc):
@@ -227,7 +272,7 @@ class GIST:
                 if isinstance(similarity_score, numbers.Number):
                     similarity_scores.append(similarity_score)
 
-        return sum(similarity_scores) / len(similarity_scores)
+        return statistics.mean(similarity_scores)
 
     def _compute_WRDHYPnv(self, df_doc):
         """
@@ -309,23 +354,24 @@ class GIST:
         :param pos_tags: list of part-of-speech tags for which we want to compute the cosine similarity
         :return:
         """
+        token_ids_by_sentence = self._get_doc_token_ids_by_sentence(df_doc)
+        embeddings = list()
+        for p_s_id, token_ids in token_ids_by_sentence.items():
+            current_embeddings = list()
+            for u_id in token_ids:
+                row = df_doc.loc[df_doc['u_id'] == u_id]
+                if row.iloc[0]['token_pos'] in pos_tags:
+                    current_embeddings.append(token_embeddings[u_id])
+            if len(current_embeddings) > 0:
+                embeddings.append(current_embeddings)
+
+        i = 0
         scores = list()
-        word_embeddings = list()
-        for idx, row in df_doc.iterrows():
-            if row['token_pos'] in pos_tags:
-                word_embeddings.append(token_embeddings[row['u_id']])
-
-        # double-checking if we have the embeddings of tokens with the specific POS tags
-        assert len(df_doc.loc[df_doc['token_pos'].isin(pos_tags)]) == len(word_embeddings)
-
-        # computing the cosine similarity among all VERBs in document
-        if len(word_embeddings) > 1:
-            pairs = itertools.combinations(word_embeddings, r=2)
+        while i < len(embeddings) - 1:
+            pairs = list(itertools.product(embeddings[i], embeddings[i + 1]))
             for pair in pairs:
                 scores.append(util.cos_sim(pair[0], pair[1]).item())
-        else:
-            # if there's only one token in the document (which shouldn't often happen), then there's %100 similarity
-            return 1
+            i += 1
 
         return sum(scores) / len(scores)
 
@@ -336,39 +382,24 @@ class GIST:
         :return:
         """
 
-        def get_consecutive_cosine(embeddings_list):
-            i = 0
-            scores = list()
-            while i < len(embeddings_list) - 1:
-                scores.append(util.cos_sim(embeddings_list[i], embeddings_list[i + 1]).item())
-                i += 1
-            return scores
-
-        def get_all_pairs_cosine(embeddings_list):
-            scores = list()
-            pairs = itertools.combinations(embeddings_list, r=2)
-            for pair in pairs:
-                scores.append((util.cos_sim(pair[0], pair[1]).item()))
-            return scores
-
         all_embeddings = list()
 
         # flattening the embedding list
         for p_id, embeddings in sentence_embeddings.items():
             for embedding in embeddings:
                 all_embeddings.append(embedding)
-        scores_1 = get_consecutive_cosine(all_embeddings)
+        scores_1 = self._consecutive_cosine(all_embeddings)
         all_sentences_consecutive_cosine = statistics.mean(scores_1) if len(scores_1) > 0 else 1
 
-        scores_2 = get_all_pairs_cosine(all_embeddings)
+        scores_2 = self._all_pairs_cosine(all_embeddings)
         all_sentences_pair_cosine = statistics.mean(scores_2) if len(scores_2) > 0 else 1
 
         scores_1 = dict()
         scores_2 = dict()
         # local among all sentence pairs in paragraphs
         for p_id, embeddings in sentence_embeddings.items():
-            scores_1[p_id] = get_consecutive_cosine(embeddings)
-            scores_2[p_id] = get_all_pairs_cosine(embeddings)
+            scores_1[p_id] = self._consecutive_cosine(embeddings)
+            scores_2[p_id] = self._all_pairs_cosine(embeddings)
 
         all_sentences_consecutive_cosine_p = statistics.mean(
             [statistics.mean(scores_1[p_id]) for p_id in scores_1.keys() if len(scores_1[p_id]) > 0])
@@ -432,7 +463,7 @@ class GIS:
 
         # computing the Gist Inference Score (GIS)
         for idx, row in df.iterrows():
-            PCREFz = row["PCREFz"] + row["CoreREFz"] if gispy else row["PCREFz"]
+            PCREFz = (row["PCREFz"] + row["CoreREFz"]) / 2 if gispy else row["PCREFz"]
             PCDCz = row["PCDCz"]
             PCCNCz = row["PCCNCz"]
             zSMCAUSlsa = row["zSMCAUSlsa"]
