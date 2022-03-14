@@ -424,12 +424,13 @@ class GIS:
         else:
             return stats.zscore(df[index_name], nan_policy='omit')
 
-    def score(self, df, wolfe=False, gispy=False):
+    def score(self, df, index_flag, wolfe=False, gispy=False):
         """
         computing Gist Inference Score (GIS) based on the following paper:
         https://link.springer.com/article/10.3758/s13428-019-01284-4
         use this method when values of indices are computed using CohMetrix
         :param df: a dataframe that contains coh-metrix indices
+        :param index_flag: a dictionary to store flags to whether use an index when computing GIS score
         :param wolfe: whether using wolfe's mean and standard deviation for computing z-score
         :param gispy: whether indices are computed by gispy or not (if not gispy, indices should be computed by CohMetrix)
         :return: the input dataframe with an extra column named "GIS" that stores gist inference score
@@ -463,13 +464,13 @@ class GIS:
 
         # computing the Gist Inference Score (GIS)
         for idx, row in df.iterrows():
-            PCREFz = (row["PCREFz"] + row["CoreREFz"]) / 2 if gispy else row["PCREFz"]
-            PCDCz = row["PCDCz"]
-            PCCNCz = row["PCCNCz"]
-            zSMCAUSlsa = row["zSMCAUSlsa"]
-            zSMCAUSwn = row["zSMCAUSwn"]
-            zWRDIMGc = row["zWRDIMGc"]
-            zWRDHYPnv = row["zWRDHYPnv"]
+            PCREFz = ((row["PCREFz"] + row["CoreREFz"]) / 2 if gispy else row["PCREFz"]) if index_flag['PCREFz'] else 0
+            PCDCz = row["PCDCz"] if index_flag['PCDCz'] else 0
+            PCCNCz = row["PCCNCz"] if index_flag['PCCNCz'] else 0
+            zSMCAUSlsa = row["zSMCAUSlsa"] if index_flag['zSMCAUSlsa'] else 0
+            zSMCAUSwn = row["zSMCAUSwn"] if index_flag['zSMCAUSwn'] else 0
+            zWRDIMGc = row["zWRDIMGc"] if index_flag['zWRDIMGc'] else 0
+            zWRDHYPnv = row["zWRDHYPnv"] if index_flag['zWRDHYPnv'] else 0
             gis = PCREFz + PCDCz + (zSMCAUSlsa - zSMCAUSwn) - PCCNCz - zWRDIMGc - zWRDHYPnv
             df.loc[idx, "gis"] = gis
 

@@ -88,9 +88,9 @@ class WolfeData:
         return df
 
 
-def wolfe_eval(input_file, gist_prefix, no_gist_prefix, use_wolfe_vars=False, use_gispy_vars=False):
+def wolfe_eval(input_file, gist_prefix, no_gist_prefix, index_flag, use_wolfe_vars=False, use_gispy_vars=False):
     df = pd.read_csv(input_file)
-    df = GIS().score(df, wolfe=use_wolfe_vars, gispy=use_gispy_vars)
+    df = GIS().score(df, index_flag, wolfe=use_wolfe_vars, gispy=use_gispy_vars)
 
     id_col = 'd_id'
 
