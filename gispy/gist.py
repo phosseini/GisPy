@@ -418,8 +418,8 @@ class GIST:
             global_scores[p_id] = self._global_cosine(embeddings)
 
         # *_p means computed at paragraph-level in contrast to the first case where we ignored paragraphs
-        local_cosine_p = statistics.mean([statistics.mean(local_scores[p_id]) for p_id in local_scores.keys()])
-        global_cosine_p = statistics.mean([statistics.mean(global_scores[p_id]) for p_id in global_scores.keys()])
+        local_cosine_p = statistics.mean([local_scores[p_id] for p_id in local_scores.keys()])
+        global_cosine_p = statistics.mean([global_scores[p_id] for p_id in global_scores.keys()])
 
         return local_cosine, global_cosine, local_cosine_p, global_cosine_p
 
