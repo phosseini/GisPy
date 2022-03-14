@@ -74,7 +74,8 @@ class GIST:
         computing the Gist Inference Score (GIS) for a collection of documents
         :return:
         """
-        indices_cols = ["CoreREF", "PCREF", "PCDC", "SMCAUSlsa", "SMCAUSwn", "PCCNC", "WRDIMGc", "WRDHYPnv"]
+        indices_cols = ["DESPC", "DESSC", "CoreREF", "PCREF", "PCDC", "SMCAUSlsa", "SMCAUSwn", "PCCNC", "WRDIMGc",
+                        "WRDHYPnv"]
         df_cols = ["d_id", "text"]
         df_cols.extend(indices_cols)
         df_docs = pd.DataFrame(columns=df_cols)
@@ -101,7 +102,7 @@ class GIST:
                         CoreREF = chain_count / sentences_count
                         # -------------------------------
                         df_doc, token_embeddings = convert_doc(doc_text)
-                        doc_sentences = self._get_doc_sentences(df_doc)
+                        doc_sentences, n_paragraphs, n_sentences = self._get_doc_sentences(df_doc)
                         sentence_embeddings = dict()
                         for p_id, sentences in doc_sentences.items():
                             sentence_embeddings[p_id] = list(self.sentence_model.encode(sentences))
@@ -114,9 +115,10 @@ class GIST:
                             WRDHYPnv = self._compute_WRDHYPnv(df_doc)
                             print('#{} done'.format(i + 1))
                             df_docs = df_docs.append(
-                                {"d_id": txt_file, "text": doc_text, "CoreREF": CoreREF, "PCREF": PCREF, "PCDC": PCDC,
-                                 "SMCAUSlsa": SMCAUSlme, "SMCAUSwn": SMCAUSwn, "PCCNC": WRDCNCc, "WRDIMGc": WRDIMGc,
-                                 "WRDHYPnv": WRDHYPnv}, ignore_index=True)
+                                {"d_id": txt_file, "text": doc_text, "DESPC": n_paragraphs, "DESSC": n_sentences,
+                                 "CoreREF": CoreREF, "PCREF": PCREF, "PCDC": PCDC, "SMCAUSlsa": SMCAUSlme,
+                                 "SMCAUSwn": SMCAUSwn, "PCCNC": WRDCNCc, "WRDIMGc": WRDIMGc, "WRDHYPnv": WRDHYPnv},
+                                ignore_index=True)
                         except Exception as e:
                             docs_with_errors.append(txt_file)
                             print(e)
@@ -172,7 +174,7 @@ class GIST:
             sentences[p_id].append(current_sentence.strip())
         len_sentences = sum([len(sentences[pid]) for pid in sentences.keys()])
         assert len_sentences == self._get_sentences_count(df_doc)
-        return sentences
+        return sentences, len(p_ids), len_sentences
 
     def _get_doc_token_ids_by_sentence(self, df_doc):
         """
