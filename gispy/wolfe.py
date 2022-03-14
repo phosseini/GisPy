@@ -31,7 +31,7 @@ class WolfeData:
             else:
                 doc_text.append(lines[i])
                 i += 1
-        
+
         # saving the last article
         df = df.append(
             {'title': doc_title, 'type': doc_title.split('-')[0].lower(), 'url': doc_url, 'text': '\n'.join(doc_text)},
@@ -48,12 +48,12 @@ class WolfeData:
         df = pd.DataFrame(columns=['title', 'methods', 'discussion'])
         text = read_word_text(folder_path)
         lines = text.split('\n')
+        lines = [line for line in lines if line.strip() != '']
 
         # ARTICLE
         # METHODS
         # DISCUSSION
 
-        article_title = str()
         methods = list()
         discussion = list()
 
@@ -62,11 +62,11 @@ class WolfeData:
         while i < len(lines):
             if lines[i].strip().lower().startswith('article'):
                 article_title = ' '.join(lines[i].split(':')[1:]).strip()
-                i += 4
+                i += 2
                 while i < len(lines) and not lines[i].lower().startswith('discussion'):
                     methods.append(lines[i])
                     i += 1
-                i += 2
+                i += 1
                 while i < len(lines) and not lines[i].strip().lower().startswith('article'):
                     discussion.append(lines[i])
                     i += 1
@@ -75,7 +75,6 @@ class WolfeData:
                     df = df.append(
                         {'title': article_title, 'methods': '\n'.join(methods), 'discussion': '\n'.join(discussion)},
                         ignore_index=True)
-                    article_title = str()
                     methods = list()
                     discussion = list()
 
@@ -106,7 +105,3 @@ def wolfe_eval(input_file, gist_prefix, no_gist_prefix, use_wolfe_vars=False, us
                'ttest_pvalue': ttest_result.pvalue}
 
     return results, df_yes, df_no
-
-
-folder_path = '../data/wolfe/Report_vs_Opinion/Report_Opinion.docx'
-df = WolfeData().convert_opinion_report_data(folder_path)
