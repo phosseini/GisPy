@@ -45,21 +45,31 @@ class GIST:
         self.sentence_model = SentenceTransformer(params['sentence_transformers_model'])
 
     @staticmethod
-    def _consecutive_cosine(embeddings):
+    def _local_cosine(embeddings):
+        """
+        computing cosine only for consecutive sentence embeddings
+        :param embeddings:
+        :return:
+        """
         i = 0
         scores = list()
         while i < len(embeddings) - 1:
             scores.append(util.cos_sim(embeddings[i], embeddings[i + 1]).item())
             i += 1
-        return scores
+        return statistics.mean(scores) if len(scores) > 0 else 0
 
     @staticmethod
-    def _all_pairs_cosine(embeddings):
+    def _global_cosine(embeddings):
+        """
+        computing cosine of all pairs of sentence embeddings
+        :param embeddings:
+        :return:
+        """
         scores = list()
         pairs = itertools.combinations(embeddings, r=2)
         for pair in pairs:
             scores.append((util.cos_sim(pair[0], pair[1]).item()))
-        return scores
+        return statistics.mean(scores) if len(scores) > 0 else 0
 
     @staticmethod
     def _clean_text(text):
@@ -74,7 +84,8 @@ class GIST:
         computing the Gist Inference Score (GIS) for a collection of documents
         :return:
         """
-        indices_cols = ["DESPC", "DESSC", "CoreREF", "PCREF", "PCDC", "SMCAUSlsa", "SMCAUSwn", "PCCNC", "WRDIMGc",
+        indices_cols = ["DESPC", "DESSC", "CoreREF", "PCREF1", "PCREFa", "PCREF1p", "PCREFap", "PCDC", "SMCAUSlsa",
+                        "SMCAUSwn", "PCCNC", "WRDIMGc",
                         "WRDHYPnv"]
         df_cols = ["d_id", "text"]
         df_cols.extend(indices_cols)
@@ -107,7 +118,7 @@ class GIST:
                         for p_id, sentences in doc_sentences.items():
                             sentence_embeddings[p_id] = list(self.sentence_model.encode(sentences))
                         try:
-                            PCREF = self._compute_PCREF(sentence_embeddings)
+                            PCREF1, PCREFa, PCREF1p, PCREFap = self._compute_PCREF(sentence_embeddings)
                             SMCAUSlme = self._compute_SMCAUSlme(df_doc, token_embeddings)
                             _, _, PCDC = self._find_causal_connectives(doc_sentences)
                             SMCAUSwn = self._compute_SMCAUSwn(df_doc, similarity_measure='wup')
@@ -116,7 +127,8 @@ class GIST:
                             print('#{} done'.format(i + 1))
                             df_docs = df_docs.append(
                                 {"d_id": txt_file, "text": doc_text, "DESPC": n_paragraphs, "DESSC": n_sentences,
-                                 "CoreREF": CoreREF, "PCREF": PCREF, "PCDC": PCDC, "SMCAUSlsa": SMCAUSlme,
+                                 "CoreREF": CoreREF, "PCREF1": PCREF1, "PCREFa": PCREFa, "PCREF1p": PCREF1p,
+                                 "PCREFap": PCREFap, "PCDC": PCDC, "SMCAUSlsa": SMCAUSlme,
                                  "SMCAUSwn": SMCAUSwn, "PCCNC": WRDCNCc, "WRDIMGc": WRDIMGc, "WRDHYPnv": WRDHYPnv},
                                 ignore_index=True)
                         except Exception as e:
@@ -384,32 +396,33 @@ class GIST:
         :return:
         """
 
+        # local: only consecutive sentences either in a paragraph or entire text
+        # global: all sentence pairs in a paragraph or entire text
+
         all_embeddings = list()
 
         # flattening the embedding list
         for p_id, embeddings in sentence_embeddings.items():
             for embedding in embeddings:
                 all_embeddings.append(embedding)
-        scores_1 = self._consecutive_cosine(all_embeddings)
-        all_sentences_consecutive_cosine = statistics.mean(scores_1) if len(scores_1) > 0 else 1
 
-        scores_2 = self._all_pairs_cosine(all_embeddings)
-        all_sentences_pair_cosine = statistics.mean(scores_2) if len(scores_2) > 0 else 1
+        local_cosine = self._local_cosine(all_embeddings)
+        global_cosine = self._global_cosine(all_embeddings)
 
-        scores_1 = dict()
-        scores_2 = dict()
-        # local among all sentence pairs in paragraphs
+        del all_embeddings
+
+        local_scores = dict()
+        global_scores = dict()
         for p_id, embeddings in sentence_embeddings.items():
-            scores_1[p_id] = self._consecutive_cosine(embeddings)
-            scores_2[p_id] = self._all_pairs_cosine(embeddings)
+            local_scores[p_id] = self._local_cosine(embeddings)
+            global_scores[p_id] = self._global_cosine(embeddings)
 
-        all_sentences_consecutive_cosine_p = statistics.mean(
-            [statistics.mean(scores_1[p_id]) for p_id in scores_1.keys() if len(scores_1[p_id]) > 0])
-        all_sentences_pair_cosine_p = statistics.mean(
-            [statistics.mean(scores_2[p_id]) for p_id in scores_2.keys() if len(scores_2[p_id]) > 0])
-        return statistics.mean(
-            [all_sentences_consecutive_cosine, all_sentences_pair_cosine, all_sentences_consecutive_cosine_p,
-             all_sentences_pair_cosine_p])
+        # *_p means computed at paragraph-level in contrast to the first case where we ignored paragraphs
+        local_cosine_p = statistics.mean(
+            [statistics.mean(local_scores[p_id]) for p_id in local_scores.keys() if len(local_scores[p_id]) > 0])
+        global_cosine_p = statistics.mean(
+            [statistics.mean(global_scores[p_id]) for p_id in global_scores.keys() if len(global_scores[p_id]) > 0])
+        return local_cosine, global_cosine, local_cosine_p, global_cosine_p
 
 
 class GIS:

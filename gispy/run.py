@@ -1,4 +1,5 @@
 import sys
+import timeit
 import os.path
 from gist import GIST
 
@@ -17,11 +18,14 @@ def main(argv):
             print('error: OUTPUT_FILE_NAME should be *.csv')
             exit(1)
 
+        start = timeit.default_timer()
         df_scores = GIST(docs_path='../data/documents').compute_scores()
+        stop = timeit.default_timer()
 
         # saving the result
         df_scores.to_csv(file_path)
         print('computing GIS is done. results are saved at /{}'.format(file_path))
+        print('Running time: {}'.format(stop - start))
     else:
         print(usage_msg)
         exit(1)
