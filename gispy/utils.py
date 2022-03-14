@@ -1,5 +1,7 @@
+import re
 import time
 import wayback
+import textract
 import pandas as pd
 import xml.etree.ElementTree as ET
 
@@ -265,3 +267,18 @@ def get_connectives_list(relation_filter=[]):
                 if len(relation_filter) == 0 or (len(relation_filter) != 0 and relation_type in relation_filter):
                     connectives.append([relation_word, relation_type])
     return connectives
+
+
+def read_word_text(file_path):
+    """
+    reading the text from a Word file
+    :param file_path:
+    :return:
+    """
+    text = textract.process(file_path)
+    text = text.decode('utf-8')
+
+    # replacing more than three new line characters with only two
+    text = re.sub(r'[\n]{3,}', '\n\n', text)
+
+    return text
