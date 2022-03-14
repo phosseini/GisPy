@@ -277,8 +277,9 @@ def read_word_text(file_path):
     """
     text = textract.process(file_path)
     text = text.decode('utf-8')
+    text = text.replace('…', '...')
 
     # replacing more than three new line characters with only two
-    text = re.sub(r'[\n]{3,}', '\n\n', text)
+    text = re.sub(r'[\n]{2,}', '\n\n', text)
 
     return text

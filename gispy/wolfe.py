@@ -14,23 +14,28 @@ class WolfeData:
         df = pd.DataFrame(columns=['title', 'type', 'url', 'text'])
         text = read_word_text(folder_path)
         lines = text.split('\n')
-
-        i = 4
+        lines = [line for line in lines if line.strip() != '']
+        i = 2
         doc_text = list()
         doc_title = lines[0]
-        doc_url = lines[2]
+        doc_url = lines[1]
 
         while i < len(lines):
             if lines[i].startswith('Opinion-') or lines[i].startswith('Report-'):
                 df = df.append({'title': doc_title, 'type': doc_title.split('-')[0].lower(), 'url': doc_url,
                                 'text': '\n'.join(doc_text)}, ignore_index=True)
                 doc_title = lines[i]
-                doc_url = lines[i + 2]
+                doc_url = lines[i + 1]
                 doc_text = list()
-                i += 4
+                i += 2
             else:
                 doc_text.append(lines[i])
                 i += 1
+        
+        # saving the last article
+        df = df.append(
+            {'title': doc_title, 'type': doc_title.split('-')[0].lower(), 'url': doc_url, 'text': '\n'.join(doc_text)},
+            ignore_index=True)
 
         df.reset_index()
         if create_text_file:
@@ -101,3 +106,7 @@ def wolfe_eval(input_file, gist_prefix, no_gist_prefix, use_wolfe_vars=False, us
                'ttest_pvalue': ttest_result.pvalue}
 
     return results, df_yes, df_no
+
+
+folder_path = '../data/wolfe/Report_vs_Opinion/Report_Opinion.docx'
+df = WolfeData().convert_opinion_report_data(folder_path)
