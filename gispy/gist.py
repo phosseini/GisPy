@@ -432,20 +432,20 @@ class GIST:
             if len(current_embeddings) > 0:
                 embeddings[p_id].append(current_embeddings)
 
-        scores_1 = list()
-        scores_a = list()
+        scores_1p = list()
+        scores_ap = list()
 
         token_embeddings_flat = list()
 
         for p_id, s_embeddings in embeddings.items():
             # *** consecutive cosine ***
             if len(s_embeddings) <= 1:
-                scores_1.append(0)
+                scores_1p.append(0)
             else:
                 i = 0
                 while i + 1 < len(s_embeddings):
                     all_pairs = list(itertools.product(s_embeddings[i], s_embeddings[i + 1]))
-                    scores_1.append(global_cosine(all_pairs))
+                    scores_1p.append(global_cosine(all_pairs))
                     i += 1
 
             # *** global cosine ***
@@ -454,15 +454,15 @@ class GIST:
                 t_embeddings.extend(item)
                 token_embeddings_flat.extend(item)
             all_pairs = itertools.combinations(t_embeddings, r=2)
-            scores_a.append(global_cosine(all_pairs))
+            scores_ap.append(global_cosine(all_pairs))
 
-        SMCAUSe_1 = statistics.mean(scores_1)
-        SMCAUSe_a = statistics.mean(scores_a)
+        SMCAUSe_1p = statistics.mean(scores_1p)
+        SMCAUSe_ap = statistics.mean(scores_ap)
 
         # computing global and local indices ignoring the paragraphs
         all_pairs = itertools.combinations(token_embeddings_flat, r=2)
-        SMCAUSe_ap = global_cosine(all_pairs)
-        SMCAUSe_1p = local_cosine(token_embeddings_flat)
+        SMCAUSe_a = global_cosine(all_pairs)
+        SMCAUSe_1 = local_cosine(token_embeddings_flat)
 
         return SMCAUSe_1, SMCAUSe_a, SMCAUSe_1p, SMCAUSe_ap
 
