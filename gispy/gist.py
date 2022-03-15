@@ -53,12 +53,10 @@ class GIST:
         """
         if len(embeddings) <= 1:
             return 0
-        elif len(embeddings) == 2:
-            return util.cos_sim(embeddings[0], embeddings[1]).item()
         else:
             i = 0
             scores = list()
-            while i < len(embeddings) - 1:
+            while i + 1 < len(embeddings):
                 scores.append(util.cos_sim(embeddings[i], embeddings[i + 1]).item())
                 i += 1
             return statistics.mean(scores)
@@ -441,11 +439,9 @@ class GIST:
             # *** consecutive cosine ***
             if len(s_embeddings) <= 1:
                 scores_1.append(0)
-            elif len(s_embeddings) == 2:
-                scores_1.append(global_cosine([s_embeddings[0], s_embeddings[1]]))
             else:
                 i = 0
-                while i < len(s_embeddings) - 1:
+                while i + 1 < len(s_embeddings):
                     all_pairs = list(itertools.product(s_embeddings[i], s_embeddings[i + 1]))
                     scores_1.append(global_cosine(all_pairs))
                     i += 1
