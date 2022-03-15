@@ -127,7 +127,8 @@ class GIST:
                             sentence_embeddings[p_id] = list(self.sentence_model.encode(sentences))
                         try:
                             PCREF1, PCREFa, PCREF1p, PCREFap = self._compute_PCREF(sentence_embeddings)
-                            SMCAUSe_1, SMCAUSe_a = self._compute_SMCAUSe(df_doc, token_embeddings)
+                            SMCAUSe_1, SMCAUSe_a, SMCAUSe_1p, SMCAUSe_ap = self._compute_SMCAUSe(df_doc,
+                                                                                                 token_embeddings)
                             _, _, PCDC = self._find_causal_connectives(doc_sentences)
                             SMCAUSwn = self._compute_SMCAUSwn(df_doc, similarity_measure='wup')
                             WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc_megahr(df_doc)
@@ -370,12 +371,36 @@ class GIST:
     def _compute_SMCAUSe(self, df_doc, token_embeddings, pos_tags=['VERB']):
         """
         computing the similarity among tokens with certain POS tag in a document
-        lme stands for the Language Model-based Embedding which is a replacement for Latent Semantic Analysis (LSA) here
+        *e* at the end stands for Embedding to show this method is a replacement for Latent Semantic Analysis (LSA) here
         :param df_doc: data frame of a document
         :param pos_tags: list of part-of-speech tags for which we want to compute the cosine similarity
         :return:
         """
         tokens_similarity = dict()
+
+        def local_cosine(e):
+            """
+            e is a list of embeddings
+            :param e:
+            :return:
+            """
+            if len(e) <= 1:
+                return 0
+            elif len(e) == 2:
+                return util.cos_sim(list(e[0].values())[0], list(e[1].values())[0]).item()
+            else:
+                j = 0
+                scores = list()
+                while j < len(e) - 1:
+                    pair_id = '{}@{}'.format(list(e[j].keys())[0], list(e[j + 1].keys())[0])
+                    if pair_id not in tokens_similarity:
+                        score = util.cos_sim(list(e[j].values())[0], list(e[j + 1].values())[0]).item()
+                        tokens_similarity[pair_id] = score
+                    else:
+                        score = tokens_similarity[pair_id]
+                    scores.append(score)
+                    j += 1
+                return statistics.mean(scores)
 
         def global_cosine(pairs):
             scores = list()
@@ -408,6 +433,8 @@ class GIST:
         scores_1 = list()
         scores_a = list()
 
+        token_embeddings_flat = list()
+
         for p_id, s_embeddings in embeddings.items():
             # *** consecutive cosine ***
             if len(s_embeddings) <= 1:
@@ -425,13 +452,19 @@ class GIST:
             t_embeddings = list()  # all token embeddings of all tokens in one paragraph
             for item in s_embeddings:
                 t_embeddings.extend(item)
+                token_embeddings_flat.extend(item)
             all_pairs = itertools.combinations(t_embeddings, r=2)
             scores_a.append(global_cosine(all_pairs))
 
         SMCAUSe_1 = statistics.mean(scores_1)
         SMCAUSe_a = statistics.mean(scores_a)
 
-        return SMCAUSe_1, SMCAUSe_a
+        # computing global and local indices ignoring the paragraphs
+        all_pairs = itertools.combinations(token_embeddings_flat, r=2)
+        SMCAUSe_ap = global_cosine(all_pairs)
+        SMCAUSe_1p = local_cosine(token_embeddings_flat)
+
+        return SMCAUSe_1, SMCAUSe_a, SMCAUSe_1p, SMCAUSe_ap
 
     def _compute_PCREF(self, sentence_embeddings):
         """
