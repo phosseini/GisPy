@@ -51,12 +51,17 @@ class GIST:
         :param embeddings:
         :return:
         """
-        i = 0
-        scores = list()
-        while i < len(embeddings) - 1:
-            scores.append(util.cos_sim(embeddings[i], embeddings[i + 1]).item())
-            i += 1
-        return statistics.mean(scores) if len(scores) > 0 else 0
+        if len(embeddings) <= 1:
+            return 0
+        elif len(embeddings) == 2:
+            return util.cos_sim(embeddings[0], embeddings[1]).item()
+        else:
+            i = 0
+            scores = list()
+            while i < len(embeddings) - 1:
+                scores.append(util.cos_sim(embeddings[i], embeddings[i + 1]).item())
+                i += 1
+            return statistics.mean(scores)
 
     @staticmethod
     def _global_cosine(embeddings):
@@ -84,9 +89,8 @@ class GIST:
         computing the Gist Inference Score (GIS) for a collection of documents
         :return:
         """
-        indices_cols = ["DESPC", "DESSC", "CoreREF", "PCREF1", "PCREFa", "PCREF1p", "PCREFap", "PCDC", "SMCAUSlsa",
-                        "SMCAUSwn", "PCCNC", "WRDIMGc",
-                        "WRDHYPnv"]
+        indices_cols = ["DESPC", "DESSC", "CoreREF", "PCREF1", "PCREFa", "PCREF1p", "PCREFap", "PCDC", "SMCAUSe_1",
+                        "SMCAUSe_a", "SMCAUSwn", "PCCNC", "WRDIMGc", "WRDHYPnv"]
         df_cols = ["d_id", "text"]
         df_cols.extend(indices_cols)
         df_docs = pd.DataFrame(columns=df_cols)
@@ -123,7 +127,7 @@ class GIST:
                             sentence_embeddings[p_id] = list(self.sentence_model.encode(sentences))
                         try:
                             PCREF1, PCREFa, PCREF1p, PCREFap = self._compute_PCREF(sentence_embeddings)
-                            SMCAUSlme = self._compute_SMCAUSlme(df_doc, token_embeddings)
+                            SMCAUSe_1, SMCAUSe_a = self._compute_SMCAUSe(df_doc, token_embeddings)
                             _, _, PCDC = self._find_causal_connectives(doc_sentences)
                             SMCAUSwn = self._compute_SMCAUSwn(df_doc, similarity_measure='wup')
                             WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc_megahr(df_doc)
@@ -132,7 +136,7 @@ class GIST:
                             df_docs = df_docs.append(
                                 {"d_id": txt_file, "text": doc_text, "DESPC": n_paragraphs, "DESSC": n_sentences,
                                  "CoreREF": CoreREF, "PCREF1": PCREF1, "PCREFa": PCREFa, "PCREF1p": PCREF1p,
-                                 "PCREFap": PCREFap, "PCDC": PCDC, "SMCAUSlsa": SMCAUSlme,
+                                 "PCREFap": PCREFap, "PCDC": PCDC, "SMCAUSe_1": SMCAUSe_1, "SMCAUSe_a": SMCAUSe_a,
                                  "SMCAUSwn": SMCAUSwn, "PCCNC": WRDCNCc, "WRDIMGc": WRDIMGc, "WRDHYPnv": WRDHYPnv},
                                 ignore_index=True)
                         except Exception as e:
@@ -238,17 +242,16 @@ class GIST:
         finding the number of causal connectives in sentences in a document
         :return:
         """
-        sentences_count = 0
-        causal_connectives_count = 0
+        n_causal_connectives = 0
         matched_patterns = list()
         for p_id, p_sentences in sentences.items():
             for sentence in p_sentences:
-                sentences_count += 1
                 for pattern in self.causal_patterns:
                     if bool(pattern.match(sentence.lower())):
-                        causal_connectives_count += 1
+                        n_causal_connectives += 1
                         matched_patterns.append(pattern)
-        return causal_connectives_count, matched_patterns, causal_connectives_count / sentences_count
+        sentences_count = sum([len(sentences[p_id]) for p_id in sentences.keys()])
+        return n_causal_connectives, matched_patterns, n_causal_connectives / sentences_count
 
     def _compute_SMCAUSwn(self, df_doc, similarity_measure='path'):
         """
@@ -364,7 +367,7 @@ class GIST:
         else:
             return None, None
 
-    def _compute_SMCAUSlme(self, df_doc, token_embeddings, pos_tags=['VERB']):
+    def _compute_SMCAUSe(self, df_doc, token_embeddings, pos_tags=['VERB']):
         """
         computing the similarity among tokens with certain POS tag in a document
         lme stands for the Language Model-based Embedding which is a replacement for Latent Semantic Analysis (LSA) here
@@ -372,26 +375,63 @@ class GIST:
         :param pos_tags: list of part-of-speech tags for which we want to compute the cosine similarity
         :return:
         """
+        tokens_similarity = dict()
+
+        def global_cosine(pairs):
+            scores = list()
+            for pair in pairs:
+                pair_id = '{}@{}'.format(list(pair[0].keys())[0], list(pair[1].keys())[0])
+                if pair_id not in tokens_similarity:
+                    score = util.cos_sim(list(pair[0].values())[0], list(pair[1].values())[0]).item()
+                    tokens_similarity[pair_id] = score
+                else:
+                    score = tokens_similarity[pair_id]
+                scores.append(score)
+            return statistics.mean(scores) if len(scores) > 0 else 0
+
         token_ids_by_sentence = self._get_doc_token_ids_by_sentence(df_doc)
-        embeddings = list()
+        embeddings = dict()
+        # keys: paragraph ids
+        # values: one list of sentence embeddings for each paragraph id
         for p_s_id, token_ids in token_ids_by_sentence.items():
+            p_id = p_s_id.split('_')[0]
+            if p_id not in embeddings:
+                embeddings[p_id] = list()
             current_embeddings = list()
             for u_id in token_ids:
                 row = df_doc.loc[df_doc['u_id'] == u_id]
                 if row.iloc[0]['token_pos'] in pos_tags:
-                    current_embeddings.append(token_embeddings[u_id])
+                    current_embeddings.append({u_id: token_embeddings[u_id]})
             if len(current_embeddings) > 0:
-                embeddings.append(current_embeddings)
+                embeddings[p_id].append(current_embeddings)
 
-        i = 0
-        scores = list()
-        while i < len(embeddings) - 1:
-            pairs = list(itertools.product(embeddings[i], embeddings[i + 1]))
-            for pair in pairs:
-                scores.append(util.cos_sim(pair[0], pair[1]).item())
-            i += 1
+        scores_1 = list()
+        scores_a = list()
 
-        return sum(scores) / len(scores)
+        for p_id, s_embeddings in embeddings.items():
+            # *** consecutive cosine ***
+            if len(s_embeddings) <= 1:
+                scores_1.append(0)
+            elif len(s_embeddings) == 2:
+                scores_1.append(global_cosine([s_embeddings[0], s_embeddings[1]]))
+            else:
+                i = 0
+                while i < len(s_embeddings) - 1:
+                    all_pairs = list(itertools.product(s_embeddings[i], s_embeddings[i + 1]))
+                    scores_1.append(global_cosine(all_pairs))
+                    i += 1
+
+            # *** global cosine ***
+            t_embeddings = list()  # all token embeddings of all tokens in one paragraph
+            for item in s_embeddings:
+                t_embeddings.extend(item)
+            all_pairs = itertools.combinations(t_embeddings, r=2)
+            scores_a.append(global_cosine(all_pairs))
+
+        SMCAUSe_1 = statistics.mean(scores_1)
+        SMCAUSe_a = statistics.mean(scores_a)
+
+        return SMCAUSe_1, SMCAUSe_a
 
     def _compute_PCREF(self, sentence_embeddings):
         """
