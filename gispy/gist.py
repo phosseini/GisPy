@@ -376,6 +376,8 @@ class GIST:
         :param pos_tags: list of part-of-speech tags for which we want to compute the cosine similarity
         :return:
         """
+        # we use this dictionary to avoid computing cosine for the very pair multiple times
+        # by simply caching the cosine value of token pairs
         tokens_similarity = dict()
 
         def local_cosine(e):
