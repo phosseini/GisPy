@@ -105,15 +105,19 @@ class GIST:
                     with open('{}/{}'.format(self.docs_path, txt_file), 'r') as input_file:
                         doc_text = input_file.read()
                         doc_text = self._clean_text(doc_text)
-                        # -------------------------------
-                        # finding the coref using corenlp
-                        ann = client.annotate(doc_text)
-                        chain_count = len(list(ann.corefChain))
-                        sentences_count = len(list(ann.sentence))
-                        CoreREF = chain_count / sentences_count
-                        # -------------------------------
                         df_doc, token_embeddings = convert_doc(doc_text)
                         doc_sentences, n_paragraphs, n_sentences = self._get_doc_sentences(df_doc)
+                        # -------------------------------
+                        # finding the coref using corenlp
+                        CoreREF = list()
+                        for p_id, p_sentences in doc_sentences.items():
+                            p_text = ' '.join(p_sentences)
+                            ann = client.annotate(p_text)
+                            chain_count = len(list(ann.corefChain))
+                            score = chain_count / len(p_sentences)
+                            CoreREF.append(score)
+                        CoreREF = statistics.mean(CoreREF)
+                        # -------------------------------
                         sentence_embeddings = dict()
                         for p_id, sentences in doc_sentences.items():
                             sentence_embeddings[p_id] = list(self.sentence_model.encode(sentences))
@@ -469,16 +473,15 @@ class GIS:
         df["zWRDIMGc"] = self._z_score(df, index_name='WRDIMGc', wolfe=wolfe)
         df["zWRDHYPnv"] = self._z_score(df, index_name='WRDHYPnv', wolfe=wolfe)
 
+        # since wolfe doesn't have mean and sd for the following indices, we go with wolfe=False here
+        gispy_cols = ['CoreREF', 'PCREF1', 'PCREFa', 'PCREF1p', 'PCREFap', 'PCDC', 'PCCNC']
         if gispy:
-            # since wolfe doesn't have mean and sd for the following indices, we go with wolfe=False here
-            df["CoreREFz"] = self._z_score(df, index_name='CoreREF')
-            df["PCREFz"] = self._z_score(df, index_name='PCREF')
-            df["PCDCz"] = self._z_score(df, index_name='PCDC')
-            df["PCCNCz"] = self._z_score(df, index_name='PCCNC')
+            for col in gispy_cols:
+                df["{}z".format(col)] = self._z_score(df, index_name=col)
 
         # computing the Gist Inference Score (GIS)
         for idx, row in df.iterrows():
-            PCREFz = ((row["PCREFz"] + row["CoreREFz"]) / 2 if gispy else row["PCREFz"]) if index_flag['PCREFz'] else 0
+            PCREFz = row["PCREF1z"] if index_flag['PCREF1z'] else 0
             PCDCz = row["PCDCz"] if index_flag['PCDCz'] else 0
             PCCNCz = row["PCCNCz"] if index_flag['PCCNCz'] else 0
             zSMCAUSlsa = row["zSMCAUSlsa"] if index_flag['zSMCAUSlsa'] else 0
