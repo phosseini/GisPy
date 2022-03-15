@@ -88,7 +88,7 @@ class GIST:
         :return:
         """
         indices_cols = ["DESPC", "DESSC", "CoreREF", "PCREF1", "PCREFa", "PCREF1p", "PCREFap", "PCDC", "SMCAUSe_1",
-                        "SMCAUSe_a", "SMCAUSwn", "PCCNC", "WRDIMGc", "WRDHYPnv"]
+                        "SMCAUSe_a", "SMCAUSe_1p", "SMCAUSe_ap", "SMCAUSwn", "PCCNC", "WRDIMGc", "WRDHYPnv"]
         df_cols = ["d_id", "text"]
         df_cols.extend(indices_cols)
         df_docs = pd.DataFrame(columns=df_cols)
@@ -135,7 +135,9 @@ class GIST:
                             df_docs = df_docs.append(
                                 {"d_id": txt_file, "text": doc_text, "DESPC": n_paragraphs, "DESSC": n_sentences,
                                  "CoreREF": CoreREF, "PCREF1": PCREF1, "PCREFa": PCREFa, "PCREF1p": PCREF1p,
-                                 "PCREFap": PCREFap, "PCDC": PCDC, "SMCAUSe_1": SMCAUSe_1, "SMCAUSe_a": SMCAUSe_a,
+                                 "PCREFap": PCREFap, "PCDC": PCDC,
+                                 "SMCAUSe_1": SMCAUSe_1, "SMCAUSe_a": SMCAUSe_a, "SMCAUSe_1p": SMCAUSe_1p,
+                                 "SMCAUSe_ap": SMCAUSe_ap,
                                  "SMCAUSwn": SMCAUSwn, "PCCNC": WRDCNCc, "WRDIMGc": WRDIMGc, "WRDHYPnv": WRDHYPnv},
                                 ignore_index=True)
                         except Exception as e:
