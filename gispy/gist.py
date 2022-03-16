@@ -95,7 +95,7 @@ class GIST:
         docs_with_errors = list()
         with CoreNLPClient(
                 annotators=['tokenize', 'ssplit', 'pos', 'lemma', 'ner', 'parse', 'coref'],
-                threads=8,
+                threads=10,
                 timeout=60000,
                 memory='20G',
                 be_quiet=True) as client:
@@ -515,13 +515,13 @@ class GIS:
         else:
             return stats.zscore(df[index_name], nan_policy='omit')
 
-    def score(self, df, index_flag, wolfe=False, gispy=False):
+    def score(self, df, variables: dict, wolfe=False, gispy=False):
         """
         computing Gist Inference Score (GIS) based on the following paper:
         https://link.springer.com/article/10.3758/s13428-019-01284-4
         use this method when values of indices are computed using CohMetrix
         :param df: a dataframe that contains coh-metrix indices
-        :param index_flag: a dictionary to store flags to whether use an index when computing GIS score
+        :param variables: a dictionary of information of variables we need to compute the GIS score
         :param wolfe: whether using wolfe's mean and standard deviation for computing z-score
         :param gispy: whether indices are computed by gispy or not (if not gispy, indices should be computed by CohMetrix)
         :return: the input dataframe with an extra column named "GIS" that stores gist inference score
@@ -540,28 +540,20 @@ class GIS:
         # μ: population mean
         # σ: population standard deviation
 
-        # computing z-scores (these are the columns for which we don't have zscores, neither in CohMetrix nor in Gispy)
-        df["zSMCAUSlsa"] = self._z_score(df, index_name='SMCAUSlsa', wolfe=wolfe)
-        df["zSMCAUSwn"] = self._z_score(df, index_name='SMCAUSwn', wolfe=wolfe)
-        df["zWRDIMGc"] = self._z_score(df, index_name='WRDIMGc', wolfe=wolfe)
-        df["zWRDHYPnv"] = self._z_score(df, index_name='WRDHYPnv', wolfe=wolfe)
-
-        # since wolfe doesn't have mean and sd for the following indices, we go with wolfe=False here
-        gispy_cols = ['CoreREF', 'PCREF1', 'PCREFa', 'PCREF1p', 'PCREFap', 'PCDC', 'PCCNC']
         if gispy:
-            for col in gispy_cols:
-                df["{}z".format(col)] = self._z_score(df, index_name=col)
+            columns = ["CoreREF", "PCREF1", "PCREFa", "PCREF1p", "PCREFap", "PCDC", "SMCAUSe_1", "SMCAUSe_a",
+                       "SMCAUSe_1p", "SMCAUSe_ap", "SMCAUSwn", "PCCNC", "WRDIMGc", "WRDHYPnv"]
+        else:
+            columns = ["SMCAUSlsa", "SMCAUSwn", "WRDIMGc", "WRDHYPnv"]
+        for column in columns:
+            df["z{}".format(column)] = self._z_score(df, index_name=column, wolfe=wolfe)
 
         # computing the Gist Inference Score (GIS)
         for idx, row in df.iterrows():
-            PCREFz = row["PCREF1z"] if index_flag['PCREF1z'] else 0
-            PCDCz = row["PCDCz"] if index_flag['PCDCz'] else 0
-            PCCNCz = row["PCCNCz"] if index_flag['PCCNCz'] else 0
-            zSMCAUSlsa = row["zSMCAUSlsa"] if index_flag['zSMCAUSlsa'] else 0
-            zSMCAUSwn = row["zSMCAUSwn"] if index_flag['zSMCAUSwn'] else 0
-            zWRDIMGc = row["zWRDIMGc"] if index_flag['zWRDIMGc'] else 0
-            zWRDHYPnv = row["zWRDHYPnv"] if index_flag['zWRDHYPnv'] else 0
-            gis = PCREFz + PCDCz + (zSMCAUSlsa - zSMCAUSwn) - PCCNCz - zWRDIMGc - zWRDHYPnv
+            gis = 0
+            for variable_name, variable in variables.items():
+                gis += variable['sign'] * statistics.mean([row[index_name] for index_name in variable['vars']]) * \
+                       variable['flag']
             df.loc[idx, "gis"] = gis
 
         return df
