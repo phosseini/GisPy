@@ -507,6 +507,9 @@ class GIS:
                               'SMCAUSwn': {'mean': 0.553, 'sd': 0.096},
                               'WRDIMGc': {'mean': 410.346, 'sd': 24.994},
                               'WRDHYPnv': {'mean': 1.843, 'sd': 0.26}}
+        self.gispy_columns = ["CoreREF", "PCREF1", "PCREFa", "PCREF1p", "PCREFap", "PCDC", "SMCAUSe_1", "SMCAUSe_a",
+                              "SMCAUSe_1p", "SMCAUSe_ap", "SMCAUSwn", "PCCNC", "WRDIMGc", "WRDHYPnv"]
+        self.cohmetrix_columns = ["SMCAUSlsa", "SMCAUSwn", "WRDIMGc", "WRDHYPnv"]
 
     def _z_score(self, df, index_name, wolfe=False):
         if wolfe:
@@ -540,11 +543,7 @@ class GIS:
         # μ: population mean
         # σ: population standard deviation
 
-        if gispy:
-            columns = ["CoreREF", "PCREF1", "PCREFa", "PCREF1p", "PCREFap", "PCDC", "SMCAUSe_1", "SMCAUSe_a",
-                       "SMCAUSe_1p", "SMCAUSe_ap", "SMCAUSwn", "PCCNC", "WRDIMGc", "WRDHYPnv"]
-        else:
-            columns = ["SMCAUSlsa", "SMCAUSwn", "WRDIMGc", "WRDHYPnv"]
+        columns = self.gispy_columns if gispy else self.cohmetrix_columns
         for column in columns:
             df["z{}".format(column)] = self._z_score(df, index_name=column, wolfe=wolfe)
 
