@@ -517,10 +517,12 @@ class GIST:
         computing WordNet Verb Overlap
         :param df_doc: data frame of a document
         :param token_ids_by_sentence:
-        :param pos_tags: list of part-of-speech tags for which we want to compute the cosine similarity
+        :param pos_tags: list of part-of-speech tags for which we want to compute the overlap
         :return:
         """
 
+        # TODO: this method is the main bottleneck in the pipeline. One reason is that for one verb we have too many synsets
+        # TODO: we need to figure out how to find the most relevant synsets for a verb
         scores_functions = {'path': wn.path_similarity, 'lch': wn.lch_similarity, 'wup': wn.wup_similarity}
 
         def synset_pair_similarity(pair):
@@ -539,34 +541,35 @@ class GIST:
                         score = score_function(synset_pair[0], synset_pair[1])
                         scores[score_name].append(score)
                 # updating the dict
-                result = {'path': statistics.mean(scores['path']) if len(scores['path']) else 0,
-                          'lch': statistics.mean(scores['lch']) if len(scores['lch']) else 0,
-                          'wup': statistics.mean(scores['wup']) if len(scores['wup']) else 0}
+                result = {'path': statistics.mean(scores['path']) if len(scores['path']) > 0 else 0,
+                          'lch': statistics.mean(scores['lch']) if len(scores['lch']) > 0 else 0,
+                          'wup': statistics.mean(scores['wup']) if len(scores['wup']) > 0 else 0}
                 self.verb_similarity[verb_pair] = result
                 return result
 
-        def local_wn_cosine(all_synsets):
+        def local_wn_cosine(synsets):
             """
-            :param all_synsets:
+            :param synsets:
             :return:
             """
             similarity_scores = {'path': list(), 'lch': list(), 'wup': list()}
-            if len(all_synsets) <= 1:
+            if len(synsets) <= 1:
                 return {'path': 0, 'lch': 0, 'wup': 0}
             else:
                 j = 0
-                while j + 1 < len(all_synsets):
-                    result = synset_pair_similarity((all_synsets[j], all_synsets[j + 1]))
+                while j + 1 < len(synsets):
+                    result = synset_pair_similarity((synsets[j], synsets[j + 1]))
                     for score_name in ['path', 'lch', 'wup']:
                         similarity_scores[score_name].append(result[score_name])
                     j += 1
-                return {'path': statistics.mean(similarity_scores['path']),
-                        'lch': statistics.mean(similarity_scores['lch']),
-                        'wup': statistics.mean(similarity_scores['wup'])}
+                return {'path': statistics.mean(similarity_scores['path']) if len(similarity_scores['path']) > 0 else 0,
+                        'lch': statistics.mean(similarity_scores['lch']) if len(similarity_scores['lch']) > 0 else 0,
+                        'wup': statistics.mean(similarity_scores['wup']) if len(similarity_scores['wup']) > 0 else 0}
 
         def global_wn_overlap(pairs):
             """
-            :param pairs:
+            computing the wordnet verb overlap among pairs
+            :param pairs: list of pair items where each pair has two elements where each element is a list of synsets
             :return:
             """
             similarity_scores = {'path': list(), 'lch': list(), 'wup': list()}
@@ -575,9 +578,9 @@ class GIST:
                 for score_name in result.keys():
                     similarity_scores[score_name].append(result[score_name])
 
-            return {'path': statistics.mean(similarity_scores['path']),
-                    'lch': statistics.mean(similarity_scores['lch']),
-                    'wup': statistics.mean(similarity_scores['wup'])}
+            return {'path': statistics.mean(similarity_scores['path']) if len(similarity_scores['path']) > 0 else 0,
+                    'lch': statistics.mean(similarity_scores['lch']) if len(similarity_scores['lch']) > 0 else 0,
+                    'wup': statistics.mean(similarity_scores['wup']) if len(similarity_scores['wup']) > 0 else 0}
 
         token_synsets = dict()
         for p_s_id, token_ids in token_ids_by_sentence.items():
@@ -590,7 +593,8 @@ class GIST:
                 if row.iloc[0]['token_pos'] in pos_tags:
                     token = row.iloc[0]['token_text']
                     synsets = set(wn.synsets(token, wn.VERB))
-                    current_synsets.append({token: synsets})
+                    if len(synsets) > 0:
+                        current_synsets.append({token: synsets})
             if len(current_synsets) > 0:
                 token_synsets[p_id].append(current_synsets)
 
@@ -599,20 +603,20 @@ class GIST:
 
         synsets_flat = list()
 
-        for p_id, s_synsets in token_synsets.items():
-            # *** consecutive cosine ***
-            if len(s_synsets) <= 1:
+        for p_id, synsets_by_sentences in token_synsets.items():
+            # *** consecutive (local) cosine ***
+            if len(synsets_by_sentences) <= 1:
                 scores_1p.append({'path': 0, 'lch': 0, 'wup': 0})
             else:
                 i = 0
-                while i + 1 < len(s_synsets):
-                    all_pairs = list(itertools.product(s_synsets[i], s_synsets[i + 1]))
-                    scores_1p.append(global_wn_overlap(all_pairs))
+                while i + 1 < len(synsets_by_sentences):
+                    pairs = list(itertools.product(synsets_by_sentences[i], synsets_by_sentences[i + 1]))
+                    scores_1p.append(global_wn_overlap(pairs))
                     i += 1
 
             # *** global cosine ***
             t_synsets = list()  # all synsets of all tokens in one paragraph
-            for item in s_synsets:
+            for item in synsets_by_sentences:
                 t_synsets.extend(item)
                 synsets_flat.extend(item)
             all_pairs = itertools.combinations(t_synsets, r=2)
