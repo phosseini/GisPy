@@ -153,15 +153,19 @@ class GIST:
                                  'SMCAUSwn_1p_path': SMCAUSwn['SMCAUSwn_1p_path'],
                                  'SMCAUSwn_1p_lch': SMCAUSwn['SMCAUSwn_1p_lch'],
                                  'SMCAUSwn_1p_wup': SMCAUSwn['SMCAUSwn_1p_wup'],
+                                 'SMCAUSwn_1p_binary': SMCAUSwn['SMCAUSwn_1p_binary'],
                                  'SMCAUSwn_ap_path': SMCAUSwn['SMCAUSwn_ap_path'],
                                  'SMCAUSwn_ap_lch': SMCAUSwn['SMCAUSwn_ap_lch'],
                                  'SMCAUSwn_ap_wup': SMCAUSwn['SMCAUSwn_ap_wup'],
+                                 'SMCAUSwn_ap_binary': SMCAUSwn['SMCAUSwn_ap_binary'],
                                  'SMCAUSwn_1_path': SMCAUSwn['SMCAUSwn_1_path'],
                                  'SMCAUSwn_1_lch': SMCAUSwn['SMCAUSwn_1_lch'],
                                  'SMCAUSwn_1_wup': SMCAUSwn['SMCAUSwn_1_wup'],
+                                 'SMCAUSwn_1_binary': SMCAUSwn['SMCAUSwn_1_binary'],
                                  'SMCAUSwn_a_path': SMCAUSwn['SMCAUSwn_a_path'],
                                  'SMCAUSwn_a_lch': SMCAUSwn['SMCAUSwn_a_lch'],
                                  'SMCAUSwn_a_wup': SMCAUSwn['SMCAUSwn_a_wup'],
+                                 'SMCAUSwn_a_binary': SMCAUSwn['SMCAUSwn_a_binary'],
                                  "PCCNC": WRDCNCc, "WRDIMGc": WRDIMGc, "WRDHYPnv": WRDHYPnv},
                                 ignore_index=True)
                         except Exception as e:
@@ -514,29 +518,40 @@ class GIST:
         :return:
         """
 
-        # TODO: this method is the main bottleneck in the pipeline. One reason is that for one verb we have too many synsets
+        # TODO: this method is a bottleneck in the pipeline. One reason is that for one verb we have too many synsets
         # TODO: we need to figure out how to find the most relevant synsets for a verb
         scores_functions = {'path': wn.path_similarity, 'lch': wn.lch_similarity, 'wup': wn.wup_similarity}
 
+        def _build_result(scores):
+            return {'path': statistics.mean(scores['path']) if len(scores['path']) > 0 else 0,
+                    'lch': statistics.mean(scores['lch']) if len(scores['lch']) > 0 else 0,
+                    'wup': statistics.mean(scores['wup']) if len(scores['wup']) > 0 else 0,
+                    'binary': statistics.mean(scores['binary']) if len(scores['binary']) > 0 else 0}
+
         def synset_pair_similarity(pair):
-            scores = {'path': list(), 'lch': list(), 'wup': list()}
-            verb_pair = '{}@{}'.format(list(pair[0].keys())[0], list(pair[1].keys())[0])
+            scores = {'path': list(), 'lch': list(), 'wup': list(), 'binary': list()}
+            token_a = pair[0][0]
+            token_a_synsets = pair[0][1]
+            token_b = pair[1][0]
+            token_b_synsets = pair[1][1]
+            binary = 0
+            if len(list(set(token_a_synsets).intersection(set(token_b_synsets)))) > 0:
+                binary = 1
+            verb_pair = '{}@{}'.format(token_a, token_b)
             if verb_pair in self.verb_similarity:
-                for score_name in ['path', 'lch', 'wup']:
-                    scores[score_name].append(self.verb_similarity[verb_pair][score_name])
-                return {'path': statistics.mean(scores['path']),
-                        'lch': statistics.mean(scores['lch']),
-                        'wup': statistics.mean(scores['wup'])}
+                return {'path': self.verb_similarity[verb_pair]['path'],
+                        'lch': self.verb_similarity[verb_pair]['lch'],
+                        'wup': self.verb_similarity[verb_pair]['wup'],
+                        'binary': self.verb_similarity[verb_pair]['binary']}
             else:
-                synset_pairs = itertools.product(list(pair[0].values())[0], list(pair[1].values())[0])
+                synset_pairs = itertools.product(token_a_synsets, token_b_synsets)
                 for synset_pair in synset_pairs:
                     for score_name, score_function in scores_functions.items():
                         score = score_function(synset_pair[0], synset_pair[1])
                         scores[score_name].append(score)
-                # updating the dict
-                result = {'path': statistics.mean(scores['path']) if len(scores['path']) > 0 else 0,
-                          'lch': statistics.mean(scores['lch']) if len(scores['lch']) > 0 else 0,
-                          'wup': statistics.mean(scores['wup']) if len(scores['wup']) > 0 else 0}
+                    scores['binary'] = [binary]
+                # updating the dict to cache the result
+                result = _build_result(scores)
                 self.verb_similarity[verb_pair] = result
                 return result
 
@@ -545,19 +560,17 @@ class GIST:
             :param synsets:
             :return:
             """
-            similarity_scores = {'path': list(), 'lch': list(), 'wup': list()}
+            similarity_scores = {'path': list(), 'lch': list(), 'wup': list(), 'binary': list()}
             if len(synsets) <= 1:
-                return {'path': 0, 'lch': 0, 'wup': 0}
+                return {'path': 0, 'lch': 0, 'wup': 0, 'binary': 0}
             else:
                 j = 0
                 while j + 1 < len(synsets):
                     result = synset_pair_similarity((synsets[j], synsets[j + 1]))
-                    for score_name in ['path', 'lch', 'wup']:
+                    for score_name in similarity_scores.keys():
                         similarity_scores[score_name].append(result[score_name])
                     j += 1
-                return {'path': statistics.mean(similarity_scores['path']) if len(similarity_scores['path']) > 0 else 0,
-                        'lch': statistics.mean(similarity_scores['lch']) if len(similarity_scores['lch']) > 0 else 0,
-                        'wup': statistics.mean(similarity_scores['wup']) if len(similarity_scores['wup']) > 0 else 0}
+                return _build_result(similarity_scores)
 
         def global_wn_overlap(pairs):
             """
@@ -565,15 +578,13 @@ class GIST:
             :param pairs: list of pair items where each pair has two elements where each element is a list of synsets
             :return:
             """
-            similarity_scores = {'path': list(), 'lch': list(), 'wup': list()}
+            similarity_scores = {'path': list(), 'lch': list(), 'wup': list(), 'binary': list()}
             for pair in pairs:
                 result = synset_pair_similarity(pair)
                 for score_name in result.keys():
                     similarity_scores[score_name].append(result[score_name])
 
-            return {'path': statistics.mean(similarity_scores['path']) if len(similarity_scores['path']) > 0 else 0,
-                    'lch': statistics.mean(similarity_scores['lch']) if len(similarity_scores['lch']) > 0 else 0,
-                    'wup': statistics.mean(similarity_scores['wup']) if len(similarity_scores['wup']) > 0 else 0}
+            return _build_result(similarity_scores)
 
         token_synsets = dict()
         for p_s_id, token_ids in token_ids_by_sentence.items():
@@ -587,7 +598,7 @@ class GIST:
                     token = row.iloc[0]['token_text']
                     synsets = set(wn.synsets(token, wn.VERB))
                     if len(synsets) > 0:
-                        current_synsets.append({token: synsets})
+                        current_synsets.append([token, synsets])
             if len(current_synsets) > 0:
                 token_synsets[p_id].append(current_synsets)
 
@@ -599,7 +610,7 @@ class GIST:
         for p_id, synsets_by_sentences in token_synsets.items():
             # *** consecutive (local) cosine ***
             if len(synsets_by_sentences) <= 1:
-                scores_1p.append({'path': 0, 'lch': 0, 'wup': 0})
+                scores_1p.append({'path': 0, 'lch': 0, 'wup': 0, 'binary': 0})
             else:
                 i = 0
                 while i + 1 < len(synsets_by_sentences):
@@ -618,9 +629,11 @@ class GIST:
         SMCAUSwn_1p_path = statistics.mean([item['path'] for item in scores_1p])
         SMCAUSwn_1p_lch = statistics.mean([item['lch'] for item in scores_1p])
         SMCAUSwn_1p_wup = statistics.mean([item['wup'] for item in scores_1p])
+        SMCAUSwn_1p_binary = statistics.mean([item['binary'] for item in scores_1p])
         SMCAUSwn_ap_path = statistics.mean([item['path'] for item in scores_ap])
         SMCAUSwn_ap_lch = statistics.mean([item['lch'] for item in scores_ap])
         SMCAUSwn_ap_wup = statistics.mean([item['wup'] for item in scores_ap])
+        SMCAUSwn_ap_binary = statistics.mean([item['binary'] for item in scores_ap])
 
         # computing global and local indices ignoring the paragraphs
         all_pairs = itertools.combinations(synsets_flat, r=2)
@@ -630,9 +643,11 @@ class GIST:
         SMCAUSwn_1_path = SMCAUSwn_1['path']
         SMCAUSwn_1_lch = SMCAUSwn_1['lch']
         SMCAUSwn_1_wup = SMCAUSwn_1['wup']
+        SMCAUSwn_1_binary = SMCAUSwn_1['binary']
         SMCAUSwn_a_path = SMCAUSwn_a['path']
         SMCAUSwn_a_lch = SMCAUSwn_a['lch']
         SMCAUSwn_a_wup = SMCAUSwn_a['wup']
+        SMCAUSwn_a_binary = SMCAUSwn_a['binary']
 
         return {'SMCAUSwn_1p_path': SMCAUSwn_1p_path,
                 'SMCAUSwn_1p_lch': SMCAUSwn_1p_lch,
@@ -645,7 +660,11 @@ class GIST:
                 'SMCAUSwn_1_wup': SMCAUSwn_1_wup,
                 'SMCAUSwn_a_path': SMCAUSwn_a_path,
                 'SMCAUSwn_a_lch': SMCAUSwn_a_lch,
-                'SMCAUSwn_a_wup': SMCAUSwn_a_wup}
+                'SMCAUSwn_a_wup': SMCAUSwn_a_wup,
+                'SMCAUSwn_1p_binary': SMCAUSwn_1p_binary,
+                'SMCAUSwn_ap_binary': SMCAUSwn_ap_binary,
+                'SMCAUSwn_1_binary': SMCAUSwn_1_binary,
+                'SMCAUSwn_a_binary': SMCAUSwn_a_binary}
 
     def _compute_PCREF(self, sentence_embeddings):
         """
