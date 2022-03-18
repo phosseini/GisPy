@@ -34,11 +34,11 @@ class GIST:
 
         # reading megahr
         self.megahr_dict = read_megahr_concreteness_imageability()
-        self.all_synsets = {}
+        self.verb_similarity = dict()
 
         # compile the causal patterns
         causal_cues = get_causal_cues()
-        self.causal_patterns = []
+        self.causal_patterns = list()
         for idx, row in causal_cues.iterrows():
             self.causal_patterns.append(re.compile(r'' + row['cue_regex'].lower() + ''))
 
@@ -78,6 +78,7 @@ class GIST:
     def _clean_text(text):
         encoded_text = text.encode("ascii", "ignore")
         text = encoded_text.decode()
+        text = text.replace('…', '...')
         text = re.sub(' +', ' ', text)
         text = re.sub(r'\n+', '\n', text).strip()
         return text
@@ -87,8 +88,13 @@ class GIST:
         computing the Gist Inference Score (GIS) for a collection of documents
         :return:
         """
-        indices_cols = ["DESPC", "DESSC", "CoreREF", "PCREF1", "PCREFa", "PCREF1p", "PCREFap", "PCDC", "SMCAUSe_1",
-                        "SMCAUSe_a", "SMCAUSe_1p", "SMCAUSe_ap", "SMCAUSwn", "PCCNC", "WRDIMGc", "WRDHYPnv"]
+        indices_cols = ["DESPC", "DESSC", "CoREF", "PCREF1", "PCREFa", "PCREF1p", "PCREFap", "PCDC", "SMCAUSe_1",
+                        "SMCAUSe_a", "SMCAUSe_1p", "SMCAUSe_ap",
+                        "SMCAUSwn_1p_path", "SMCAUSwn_1p_lch", "SMCAUSwn_1p_wup",
+                        "SMCAUSwn_ap_path", "SMCAUSwn_ap_lch", "SMCAUSwn_ap_wup",
+                        "SMCAUSwn_1_path", "SMCAUSwn_1_lch", "SMCAUSwn_1_wup",
+                        "SMCAUSwn_a_path", "SMCAUSwn_a_lch", "SMCAUSwn_a_wup",
+                        "PCCNC", "WRDIMGc", "WRDHYPnv"]
         df_cols = ["d_id", "text"]
         df_cols.extend(indices_cols)
         df_docs = pd.DataFrame(columns=df_cols)
@@ -109,36 +115,61 @@ class GIST:
                         doc_text = self._clean_text(doc_text)
                         df_doc, token_embeddings = convert_doc(doc_text)
                         doc_sentences, n_paragraphs, n_sentences = self._get_doc_sentences(df_doc)
+                        token_ids_by_sentence = self._get_doc_token_ids_by_sentence(df_doc)
                         # -------------------------------
                         # finding the coref using corenlp
-                        CoreREF = list()
+                        coref_scores = list()
                         for p_id, p_sentences in doc_sentences.items():
-                            p_text = ' '.join(p_sentences)
-                            ann = client.annotate(p_text)
+                            paragraph_text = ' '.join(p_sentences)
+                            ann = client.annotate(paragraph_text)
                             chain_count = len(list(ann.corefChain))
-                            score = chain_count / len(p_sentences)
-                            CoreREF.append(score)
-                        CoreREF = statistics.mean(CoreREF)
+                            coref_score = chain_count / len(p_sentences)
+                            coref_scores.append(coref_score)
+                        CoREF = statistics.mean(coref_scores)
                         # -------------------------------
                         sentence_embeddings = dict()
+                        all_sentences = list()
+                        # initializing sentences and embeddings list
                         for p_id, sentences in doc_sentences.items():
-                            sentence_embeddings[p_id] = list(self.sentence_model.encode(sentences))
+                            all_sentences.extend(sentences)
+                            sentence_embeddings[p_id] = [0] * len(sentences)
+                        # computing all embeddings at once
+                        all_embeddings = list(self.sentence_model.encode(all_sentences))
+                        s_index = 0
+                        for p_id, sentences in doc_sentences.items():
+                            for idx, sentence in enumerate(sentences):
+                                if sentence == all_sentences[s_index]:
+                                    sentence_embeddings[p_id][idx] = all_embeddings[s_index]
+                                    s_index += 1
                         try:
                             PCREF1, PCREFa, PCREF1p, PCREFap = self._compute_PCREF(sentence_embeddings)
                             SMCAUSe_1, SMCAUSe_a, SMCAUSe_1p, SMCAUSe_ap = self._compute_SMCAUSe(df_doc,
-                                                                                                 token_embeddings)
+                                                                                                 token_embeddings,
+                                                                                                 token_ids_by_sentence)
+                            SMCAUSwn = self._compute_SMCAUSwn(df_doc, token_ids_by_sentence)
                             _, _, PCDC = self._find_causal_connectives(doc_sentences)
-                            SMCAUSwn = self._compute_SMCAUSwn(df_doc, similarity_measure='wup')
                             WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc_megahr(df_doc)
                             WRDHYPnv = self._compute_WRDHYPnv(df_doc)
                             print('#{} done'.format(i + 1))
                             df_docs = df_docs.append(
                                 {"d_id": txt_file, "text": doc_text, "DESPC": n_paragraphs, "DESSC": n_sentences,
-                                 "CoreREF": CoreREF, "PCREF1": PCREF1, "PCREFa": PCREFa, "PCREF1p": PCREF1p,
+                                 "CoREF": CoREF, "PCREF1": PCREF1, "PCREFa": PCREFa, "PCREF1p": PCREF1p,
                                  "PCREFap": PCREFap, "PCDC": PCDC,
                                  "SMCAUSe_1": SMCAUSe_1, "SMCAUSe_a": SMCAUSe_a, "SMCAUSe_1p": SMCAUSe_1p,
                                  "SMCAUSe_ap": SMCAUSe_ap,
-                                 "SMCAUSwn": SMCAUSwn, "PCCNC": WRDCNCc, "WRDIMGc": WRDIMGc, "WRDHYPnv": WRDHYPnv},
+                                 'SMCAUSwn_1p_path': SMCAUSwn['SMCAUSwn_1p_path'],
+                                 'SMCAUSwn_1p_lch': SMCAUSwn['SMCAUSwn_1p_lch'],
+                                 'SMCAUSwn_1p_wup': SMCAUSwn['SMCAUSwn_1p_wup'],
+                                 'SMCAUSwn_ap_path': SMCAUSwn['SMCAUSwn_ap_path'],
+                                 'SMCAUSwn_ap_lch': SMCAUSwn['SMCAUSwn_ap_lch'],
+                                 'SMCAUSwn_ap_wup': SMCAUSwn['SMCAUSwn_ap_wup'],
+                                 'SMCAUSwn_1_path': SMCAUSwn['SMCAUSwn_1_path'],
+                                 'SMCAUSwn_1_lch': SMCAUSwn['SMCAUSwn_1_lch'],
+                                 'SMCAUSwn_1_wup': SMCAUSwn['SMCAUSwn_1_wup'],
+                                 'SMCAUSwn_a_path': SMCAUSwn['SMCAUSwn_a_path'],
+                                 'SMCAUSwn_a_lch': SMCAUSwn['SMCAUSwn_a_lch'],
+                                 'SMCAUSwn_a_wup': SMCAUSwn['SMCAUSwn_a_wup'],
+                                 "PCCNC": WRDCNCc, "WRDIMGc": WRDIMGc, "WRDHYPnv": WRDHYPnv},
                                 ignore_index=True)
                         except Exception as e:
                             docs_with_errors.append(txt_file)
@@ -152,6 +183,24 @@ class GIST:
         print('# of documents with error: {}'.format(len(docs_with_errors)))
 
         return df_docs
+
+    @staticmethod
+    def _filter_tokens_by_pos(df_doc, token_ids_by_sentence, pos_tags: list):
+        tokens = dict()
+        # keys: paragraph ids
+        # values: one list of sentence embeddings for each paragraph id
+        for p_s_id, token_ids in token_ids_by_sentence.items():
+            p_id = p_s_id.split('_')[0]
+            if p_id not in tokens:
+                tokens[p_id] = list()
+            current_tokens = list()
+            for u_id in token_ids:
+                row = df_doc.loc[df_doc['u_id'] == u_id]
+                if row.iloc[0]['token_pos'] in pos_tags:
+                    current_tokens.append({u_id: row.iloc['token_text']})
+            if len(current_tokens) > 0:
+                tokens[p_id].append(current_tokens)
+        return tokens
 
     @staticmethod
     def _get_sentences_count(df_doc):
@@ -254,7 +303,7 @@ class GIST:
         sentences_count = sum([len(sentences[p_id]) for p_id in sentences.keys()])
         return n_causal_connectives, matched_patterns, n_causal_connectives / sentences_count
 
-    def _compute_SMCAUSwn(self, df_doc, similarity_measure='path'):
+    def _compute_SMCAUSwn_v1(self, df_doc, similarity_measure='path'):
         """
         computing the WordNet Verb Overlap in a document
         :param similarity_measure: the type of similarity to use, one of the following: ['path', 'lch', 'wup]
@@ -368,7 +417,7 @@ class GIST:
         else:
             return None, None
 
-    def _compute_SMCAUSe(self, df_doc, token_embeddings, pos_tags=['VERB']):
+    def _compute_SMCAUSe(self, df_doc, token_embeddings, token_ids_by_sentence, pos_tags=['VERB']):
         """
         computing the similarity among tokens with certain POS tag in a document
         *e* at the end stands for Embedding to show this method is a replacement for Latent Semantic Analysis (LSA) here
@@ -388,12 +437,10 @@ class GIST:
             """
             if len(e) <= 1:
                 return 0
-            elif len(e) == 2:
-                return util.cos_sim(list(e[0].values())[0], list(e[1].values())[0]).item()
             else:
                 j = 0
                 scores = list()
-                while j < len(e) - 1:
+                while j + 1 < len(e):
                     pair_id = '{}@{}'.format(list(e[j].keys())[0], list(e[j + 1].keys())[0])
                     if pair_id not in tokens_similarity:
                         score = util.cos_sim(list(e[j].values())[0], list(e[j + 1].values())[0]).item()
@@ -416,7 +463,6 @@ class GIST:
                 scores.append(score)
             return statistics.mean(scores) if len(scores) > 0 else 0
 
-        token_ids_by_sentence = self._get_doc_token_ids_by_sentence(df_doc)
         embeddings = dict()
         # keys: paragraph ids
         # values: one list of sentence embeddings for each paragraph id
@@ -466,6 +512,144 @@ class GIST:
 
         return SMCAUSe_1, SMCAUSe_a, SMCAUSe_1p, SMCAUSe_ap
 
+    def _compute_SMCAUSwn(self, df_doc, token_ids_by_sentence, pos_tags=['VERB']):
+        """
+        computing the similarity among tokens with certain POS tag in a document
+        *e* at the end stands for Embedding to show this method is a replacement for Latent Semantic Analysis (LSA) here
+        :param df_doc: data frame of a document
+        :param pos_tags: list of part-of-speech tags for which we want to compute the cosine similarity
+        :return:
+        """
+
+        scores_functions = {'path': wn.path_similarity, 'lch': wn.lch_similarity, 'wup': wn.wup_similarity}
+
+        def synset_pair_similarity(pair):
+            scores = {'path': list(), 'lch': list(), 'wup': list()}
+            verb_pair = '{}@{}'.format(list(pair[0].keys())[0], list(pair[1].keys())[0])
+            if verb_pair in self.verb_similarity:
+                for score_name in ['path', 'lch', 'wup']:
+                    scores[score_name].append(self.verb_similarity[verb_pair][score_name])
+                return {'path': statistics.mean(scores['path']),
+                        'lch': statistics.mean(scores['lch']),
+                        'wup': statistics.mean(scores['wup'])}
+            else:
+                synset_pairs = itertools.product(list(pair[0].values())[0], list(pair[1].values())[0])
+                for synset_pair in synset_pairs:
+                    for score_name, score_function in scores_functions.items():
+                        score = score_function(synset_pair[0], synset_pair[1])
+                        scores[score_name].append(score)
+                # updating the dict
+                result = {'path': statistics.mean(scores['path']) if len(scores['path']) else 0,
+                          'lch': statistics.mean(scores['lch']) if len(scores['lch']) else 0,
+                          'wup': statistics.mean(scores['wup']) if len(scores['wup']) else 0}
+                self.verb_similarity[verb_pair] = result
+                return result
+
+        def local_wn_cosine(all_synsets):
+            """
+            :param all_synsets:
+            :return:
+            """
+            similarity_scores = {'path': list(), 'lch': list(), 'wup': list()}
+            if len(all_synsets) <= 1:
+                return {'path': 0, 'lch': 0, 'wup': 0}
+            else:
+                j = 0
+                while j + 1 < len(all_synsets):
+                    result = synset_pair_similarity((all_synsets[j], all_synsets[j + 1]))
+                    for score_name in ['path', 'lch', 'wup']:
+                        similarity_scores[score_name].append(result[score_name])
+                    j += 1
+                return {'path': statistics.mean(similarity_scores['path']),
+                        'lch': statistics.mean(similarity_scores['lch']),
+                        'wup': statistics.mean(similarity_scores['wup'])}
+
+        def global_wn_overlap(pairs):
+            """
+            :param pairs:
+            :return:
+            """
+            similarity_scores = {'path': list(), 'lch': list(), 'wup': list()}
+            for pair in pairs:
+                result = synset_pair_similarity(pair)
+                for score_name in result.keys():
+                    similarity_scores[score_name].append(result[score_name])
+
+            return {'path': statistics.mean(similarity_scores['path']),
+                    'lch': statistics.mean(similarity_scores['lch']),
+                    'wup': statistics.mean(similarity_scores['wup'])}
+
+        token_synsets = dict()
+        for p_s_id, token_ids in token_ids_by_sentence.items():
+            p_id = p_s_id.split('_')[0]
+            if p_id not in token_synsets:
+                token_synsets[p_id] = list()
+            current_synsets = list()
+            for u_id in token_ids:
+                row = df_doc.loc[df_doc['u_id'] == u_id]
+                if row.iloc[0]['token_pos'] in pos_tags:
+                    token = row.iloc[0]['token_text']
+                    synsets = set(wn.synsets(token, wn.VERB))
+                    current_synsets.append({token: synsets})
+            if len(current_synsets) > 0:
+                token_synsets[p_id].append(current_synsets)
+
+        scores_1p = list()
+        scores_ap = list()
+
+        synsets_flat = list()
+
+        for p_id, s_synsets in token_synsets.items():
+            # *** consecutive cosine ***
+            if len(s_synsets) <= 1:
+                scores_1p.append({'path': 0, 'lch': 0, 'wup': 0})
+            else:
+                i = 0
+                while i + 1 < len(s_synsets):
+                    all_pairs = list(itertools.product(s_synsets[i], s_synsets[i + 1]))
+                    scores_1p.append(global_wn_overlap(all_pairs))
+                    i += 1
+
+            # *** global cosine ***
+            t_synsets = list()  # all synsets of all tokens in one paragraph
+            for item in s_synsets:
+                t_synsets.extend(item)
+                synsets_flat.extend(item)
+            all_pairs = itertools.combinations(t_synsets, r=2)
+            scores_ap.append(global_wn_overlap(all_pairs))
+
+        SMCAUSwn_1p_path = statistics.mean([item['path'] for item in scores_1p])
+        SMCAUSwn_1p_lch = statistics.mean([item['lch'] for item in scores_1p])
+        SMCAUSwn_1p_wup = statistics.mean([item['wup'] for item in scores_1p])
+        SMCAUSwn_ap_path = statistics.mean([item['path'] for item in scores_ap])
+        SMCAUSwn_ap_lch = statistics.mean([item['lch'] for item in scores_ap])
+        SMCAUSwn_ap_wup = statistics.mean([item['wup'] for item in scores_ap])
+
+        # computing global and local indices ignoring the paragraphs
+        all_pairs = itertools.combinations(synsets_flat, r=2)
+        SMCAUSwn_a = global_wn_overlap(all_pairs)
+        SMCAUSwn_1 = local_wn_cosine(synsets_flat)
+
+        SMCAUSwn_1_path = SMCAUSwn_1['path']
+        SMCAUSwn_1_lch = SMCAUSwn_1['lch']
+        SMCAUSwn_1_wup = SMCAUSwn_1['wup']
+        SMCAUSwn_a_path = SMCAUSwn_a['path']
+        SMCAUSwn_a_lch = SMCAUSwn_a['lch']
+        SMCAUSwn_a_wup = SMCAUSwn_a['wup']
+
+        return {'SMCAUSwn_1p_path': SMCAUSwn_1p_path,
+                'SMCAUSwn_1p_lch': SMCAUSwn_1p_lch,
+                'SMCAUSwn_1p_wup': SMCAUSwn_1p_wup,
+                'SMCAUSwn_ap_path': SMCAUSwn_ap_path,
+                'SMCAUSwn_ap_lch': SMCAUSwn_ap_lch,
+                'SMCAUSwn_ap_wup': SMCAUSwn_ap_wup,
+                'SMCAUSwn_1_path': SMCAUSwn_1_path,
+                'SMCAUSwn_1_lch': SMCAUSwn_1_lch,
+                'SMCAUSwn_1_wup': SMCAUSwn_1_wup,
+                'SMCAUSwn_a_path': SMCAUSwn_a_path,
+                'SMCAUSwn_a_lch': SMCAUSwn_a_lch,
+                'SMCAUSwn_a_wup': SMCAUSwn_a_wup}
+
     def _compute_PCREF(self, sentence_embeddings):
         """
         Computing Text Easability PC Referential cohesion
@@ -507,7 +691,7 @@ class GIS:
                               'SMCAUSwn': {'mean': 0.553, 'sd': 0.096},
                               'WRDIMGc': {'mean': 410.346, 'sd': 24.994},
                               'WRDHYPnv': {'mean': 1.843, 'sd': 0.26}}
-        self.gispy_columns = ["CoreREF", "PCREF1", "PCREFa", "PCREF1p", "PCREFap", "PCDC", "SMCAUSe_1", "SMCAUSe_a",
+        self.gispy_columns = ["CoREF", "PCREF1", "PCREFa", "PCREF1p", "PCREFap", "PCDC", "SMCAUSe_1", "SMCAUSe_a",
                               "SMCAUSe_1p", "SMCAUSe_ap", "SMCAUSwn", "PCCNC", "WRDIMGc", "WRDHYPnv"]
         self.cohmetrix_columns = ["SMCAUSlsa", "SMCAUSwn", "WRDIMGc", "WRDHYPnv"]
 
