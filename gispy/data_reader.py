@@ -201,3 +201,18 @@ def convert_doc(doc_text):
         p_id += 1
 
     return df_doc, token_embeddings
+
+
+class GisPyData:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def get_gispy_index_columns():
+        return ["DESPC", "DESSC", "CoREF", "PCREF1", "PCREFa", "PCREF1p", "PCREFap", "PCDC", "SMCAUSe_1",
+                "SMCAUSe_a", "SMCAUSe_1p", "SMCAUSe_ap",
+                "SMCAUSwn_1p_path", "SMCAUSwn_1p_lch", "SMCAUSwn_1p_wup",
+                "SMCAUSwn_ap_path", "SMCAUSwn_ap_lch", "SMCAUSwn_ap_wup",
+                "SMCAUSwn_1_path", "SMCAUSwn_1_lch", "SMCAUSwn_1_wup",
+                "SMCAUSwn_a_path", "SMCAUSwn_a_lch", "SMCAUSwn_a_wup",
+                "PCCNC", "WRDIMGc", "WRDHYPnv"]

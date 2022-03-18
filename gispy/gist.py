@@ -16,7 +16,7 @@ from sentence_transformers import SentenceTransformer, util
 from utils import find_mrc_word
 from utils import get_causal_cues
 from utils import read_megahr_concreteness_imageability
-from data_reader import convert_doc
+from data_reader import convert_doc, GisPyData
 
 
 class GIST:
@@ -88,15 +88,8 @@ class GIST:
         computing the Gist Inference Score (GIS) for a collection of documents
         :return:
         """
-        indices_cols = ["DESPC", "DESSC", "CoREF", "PCREF1", "PCREFa", "PCREF1p", "PCREFap", "PCDC", "SMCAUSe_1",
-                        "SMCAUSe_a", "SMCAUSe_1p", "SMCAUSe_ap",
-                        "SMCAUSwn_1p_path", "SMCAUSwn_1p_lch", "SMCAUSwn_1p_wup",
-                        "SMCAUSwn_ap_path", "SMCAUSwn_ap_lch", "SMCAUSwn_ap_wup",
-                        "SMCAUSwn_1_path", "SMCAUSwn_1_lch", "SMCAUSwn_1_wup",
-                        "SMCAUSwn_a_path", "SMCAUSwn_a_lch", "SMCAUSwn_a_wup",
-                        "PCCNC", "WRDIMGc", "WRDHYPnv"]
         df_cols = ["d_id", "text"]
-        df_cols.extend(indices_cols)
+        df_cols.extend(GisPyData().get_gispy_index_columns())
         df_docs = pd.DataFrame(columns=df_cols)
         docs_with_errors = list()
         with CoreNLPClient(
@@ -695,8 +688,7 @@ class GIS:
                               'SMCAUSwn': {'mean': 0.553, 'sd': 0.096},
                               'WRDIMGc': {'mean': 410.346, 'sd': 24.994},
                               'WRDHYPnv': {'mean': 1.843, 'sd': 0.26}}
-        self.gispy_columns = ["CoREF", "PCREF1", "PCREFa", "PCREF1p", "PCREFap", "PCDC", "SMCAUSe_1", "SMCAUSe_a",
-                              "SMCAUSe_1p", "SMCAUSe_ap", "SMCAUSwn", "PCCNC", "WRDIMGc", "WRDHYPnv"]
+        self.gispy_columns = GisPyData().get_gispy_index_columns()
         self.cohmetrix_columns = ["SMCAUSlsa", "SMCAUSwn", "WRDIMGc", "WRDHYPnv"]
 
     def _z_score(self, df, index_name, wolfe=False):
