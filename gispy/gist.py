@@ -514,9 +514,9 @@ class GIST:
 
     def _compute_SMCAUSwn(self, df_doc, token_ids_by_sentence, pos_tags=['VERB']):
         """
-        computing the similarity among tokens with certain POS tag in a document
-        *e* at the end stands for Embedding to show this method is a replacement for Latent Semantic Analysis (LSA) here
+        computing WordNet Verb Overlap
         :param df_doc: data frame of a document
+        :param token_ids_by_sentence:
         :param pos_tags: list of part-of-speech tags for which we want to compute the cosine similarity
         :return:
         """
