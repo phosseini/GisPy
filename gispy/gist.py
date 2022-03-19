@@ -140,7 +140,7 @@ class GIST:
                                                                                                  token_embeddings,
                                                                                                  token_ids_by_sentence)
                             SMCAUSwn = self._compute_SMCAUSwn(df_doc, token_ids_by_sentence)
-                            _, _, PCDC = self._find_causal_connectives(doc_sentences)
+                            PCDC = self._compute_PCDC(doc_sentences)
                             WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc_megahr(df_doc)
                             WRDHYPnv = self._compute_WRDHYPnv(df_doc)
                             print('#{} done'.format(i + 1))
@@ -284,7 +284,7 @@ class GIST:
                     break  # we break here since for now we only want to know whether this verb can be causal at all.
         return causal_verbs, len(causal_verbs) / len(verbs)
 
-    def _find_causal_connectives(self, sentences):
+    def _compute_PCDC(self, sentences):
         """
         finding the number of causal connectives in sentences in a document
         :return:
@@ -298,7 +298,7 @@ class GIST:
                         n_causal_connectives += 1
                         matched_patterns.append(pattern)
         sentences_count = sum([len(sentences[p_id]) for p_id in sentences.keys()])
-        return n_causal_connectives, matched_patterns, n_causal_connectives / sentences_count
+        return n_causal_connectives / sentences_count
 
     def _compute_SMCAUSwn_v1(self, df_doc, similarity_measure='path'):
         """
@@ -351,13 +351,13 @@ class GIST:
         verbs_nouns = df_doc.loc[(df_doc['token_pos'] == 'VERB') | (df_doc['token_pos'] == 'NOUN')][
             ['token_text', 'token_lemma', 'token_pos']]
 
-        scores = []
+        scores = list()
         for index, row in verbs_nouns.iterrows():
             try:
                 if row['token_pos'] == 'VERB':
-                    synsets = list(set(wn.synsets(row['token_lemma'], wn.VERB)))
+                    synsets = list(set(wn.synsets(row['token_text'], wn.VERB)))
                 elif row['token_pos'] == 'NOUN':
-                    synsets = list(set(wn.synsets(row['token_lemma'], wn.NOUN)))
+                    synsets = list(set(wn.synsets(row['token_text'], wn.NOUN)))
 
                 hypernym_path_length = 0
                 for synset in synsets:
@@ -367,7 +367,7 @@ class GIST:
                 scores.append(hypernym_score)
             except:
                 pass
-        return sum(scores) / len(scores)
+        return statistics.mean(scores)
 
     def _compute_WRDCNCc_WRDIMGc_mrc(self, df_doc):
         """
