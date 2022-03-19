@@ -626,45 +626,27 @@ class GIST:
             all_pairs = itertools.combinations(t_synsets, r=2)
             scores_ap.append(global_wn_overlap(all_pairs))
 
-        SMCAUSwn_1p_path = statistics.mean([item['path'] for item in scores_1p])
-        SMCAUSwn_1p_lch = statistics.mean([item['lch'] for item in scores_1p])
-        SMCAUSwn_1p_wup = statistics.mean([item['wup'] for item in scores_1p])
-        SMCAUSwn_1p_binary = statistics.mean([item['binary'] for item in scores_1p])
-        SMCAUSwn_ap_path = statistics.mean([item['path'] for item in scores_ap])
-        SMCAUSwn_ap_lch = statistics.mean([item['lch'] for item in scores_ap])
-        SMCAUSwn_ap_wup = statistics.mean([item['wup'] for item in scores_ap])
-        SMCAUSwn_ap_binary = statistics.mean([item['binary'] for item in scores_ap])
-
         # computing global and local indices ignoring the paragraphs
         all_pairs = itertools.combinations(synsets_flat, r=2)
         SMCAUSwn_a = global_wn_overlap(all_pairs)
         SMCAUSwn_1 = local_wn_cosine(synsets_flat)
 
-        SMCAUSwn_1_path = SMCAUSwn_1['path']
-        SMCAUSwn_1_lch = SMCAUSwn_1['lch']
-        SMCAUSwn_1_wup = SMCAUSwn_1['wup']
-        SMCAUSwn_1_binary = SMCAUSwn_1['binary']
-        SMCAUSwn_a_path = SMCAUSwn_a['path']
-        SMCAUSwn_a_lch = SMCAUSwn_a['lch']
-        SMCAUSwn_a_wup = SMCAUSwn_a['wup']
-        SMCAUSwn_a_binary = SMCAUSwn_a['binary']
-
-        return {'SMCAUSwn_1p_path': SMCAUSwn_1p_path,
-                'SMCAUSwn_1p_lch': SMCAUSwn_1p_lch,
-                'SMCAUSwn_1p_wup': SMCAUSwn_1p_wup,
-                'SMCAUSwn_ap_path': SMCAUSwn_ap_path,
-                'SMCAUSwn_ap_lch': SMCAUSwn_ap_lch,
-                'SMCAUSwn_ap_wup': SMCAUSwn_ap_wup,
-                'SMCAUSwn_1_path': SMCAUSwn_1_path,
-                'SMCAUSwn_1_lch': SMCAUSwn_1_lch,
-                'SMCAUSwn_1_wup': SMCAUSwn_1_wup,
-                'SMCAUSwn_a_path': SMCAUSwn_a_path,
-                'SMCAUSwn_a_lch': SMCAUSwn_a_lch,
-                'SMCAUSwn_a_wup': SMCAUSwn_a_wup,
-                'SMCAUSwn_1p_binary': SMCAUSwn_1p_binary,
-                'SMCAUSwn_ap_binary': SMCAUSwn_ap_binary,
-                'SMCAUSwn_1_binary': SMCAUSwn_1_binary,
-                'SMCAUSwn_a_binary': SMCAUSwn_a_binary}
+        return {'SMCAUSwn_1p_path': statistics.mean([item['path'] for item in scores_1p]),
+                'SMCAUSwn_1p_lch': statistics.mean([item['lch'] for item in scores_1p]),
+                'SMCAUSwn_1p_wup': statistics.mean([item['wup'] for item in scores_1p]),
+                'SMCAUSwn_1p_binary': statistics.mean([item['binary'] for item in scores_1p]),
+                'SMCAUSwn_ap_path': statistics.mean([item['path'] for item in scores_ap]),
+                'SMCAUSwn_ap_lch': statistics.mean([item['lch'] for item in scores_ap]),
+                'SMCAUSwn_ap_wup': statistics.mean([item['wup'] for item in scores_ap]),
+                'SMCAUSwn_ap_binary': statistics.mean([item['binary'] for item in scores_ap]),
+                'SMCAUSwn_1_path': SMCAUSwn_1['path'],
+                'SMCAUSwn_1_lch': SMCAUSwn_1['lch'],
+                'SMCAUSwn_1_wup': SMCAUSwn_1['wup'],
+                'SMCAUSwn_1_binary': SMCAUSwn_1['binary'],
+                'SMCAUSwn_a_path': SMCAUSwn_a['path'],
+                'SMCAUSwn_a_lch': SMCAUSwn_a['lch'],
+                'SMCAUSwn_a_wup': SMCAUSwn_a['wup'],
+                'SMCAUSwn_a_binary': SMCAUSwn_a['binary']}
 
     def _compute_PCREF(self, sentence_embeddings):
         """
