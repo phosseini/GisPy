@@ -270,4 +270,6 @@ class GisPyData:
 
     @staticmethod
     def generate_variables_dict_id(variables_dict):
-        return '#'.join(['#'.join(variables_dict[v]['vars']) for v in list(variables_dict.keys())])
+        vars_name_string = '#'.join(['#'.join(variables_dict[v]['vars']) for v in list(variables_dict.keys())])
+        vars_name_list = vars_name_string.split('#')
+        return vars_name_string, vars_name_list
