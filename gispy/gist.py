@@ -146,8 +146,9 @@ class GIST:
                             print('#{} done'.format(i + 1))
                             df_docs = df_docs.append(
                                 {"d_id": txt_file, "text": doc_text, "DESPC": n_paragraphs, "DESSC": n_sentences,
-                                 "CoREF": CoREF, "PCREF1": PCREF1, "PCREFa": PCREFa, "PCREF1p": PCREF1p,
-                                 "PCREFap": PCREFap, "PCDC": PCDC,
+                                 "CoREF": CoREF, "PCREF_1": PCREF1, "PCREF_a": PCREFa, "PCREF_1p": PCREF1p,
+                                 "PCREF_ap": PCREFap,
+                                 "PCDC": PCDC,
                                  "SMCAUSe_1": SMCAUSe_1, "SMCAUSe_a": SMCAUSe_a, "SMCAUSe_1p": SMCAUSe_1p,
                                  "SMCAUSe_ap": SMCAUSe_ap,
                                  'SMCAUSwn_1p_path': SMCAUSwn['SMCAUSwn_1p_path'],

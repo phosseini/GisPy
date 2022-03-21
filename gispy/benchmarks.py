@@ -124,25 +124,28 @@ class Wolfe:
         """
         vars_dicts = GisPyData().get_variables_dict()
         results = pd.DataFrame(
-            columns=['vars_name', 'mean_gist_yes', 'mean_gist_no', 'distance', 'ttest_statistic', 'ttest_pvalue'])
-
+            columns=['vars_name', 'mean_gist_yes', 'mean_gist_no', 'distance', 'ttest_statistic',
+                     'ttest_pvalue'])
+        plot_id = 0
         for vars_dict in vars_dicts:
             result, df_yes, df_no = Wolfe().wolfe_eval(gispy_indices_file,
                                                        prefix_names,
                                                        vars_dict,
                                                        use_wolfe_vars=use_wolfe_vars,
                                                        use_gispy_vars=use_gispy_vars)
-
             vars_string, vars_list = GisPyData().generate_variables_dict_id(vars_dict)
-            results = results.append({'vars_name': vars_string,
-                                      'mean_gist_yes': result['mean_gist_yes'],
-                                      'mean_gist_no': result['mean_gist_no'],
-                                      'distance': abs(result['mean_gist_yes'] - result['mean_gist_no']),
-                                      'ttest_statistic': result['ttest_statistic'],
-                                      'ttest_pvalue': result['ttest_pvalue']}, ignore_index=True)
+            vars_string = str(plot_id) + '#' + vars_string
+            results = results.append({
+                'vars_name': vars_string,
+                'mean_gist_yes': result['mean_gist_yes'],
+                'mean_gist_no': result['mean_gist_no'],
+                'distance': abs(result['mean_gist_yes'] - result['mean_gist_no']),
+                'ttest_statistic': result['ttest_statistic'],
+                'ttest_pvalue': result['ttest_pvalue']}, ignore_index=True)
 
             if plot:
                 self.plot_scores(df_yes, df_no, vars_list, vars_string)
+            plot_id += 1
 
         results.sort_values('distance', ascending=False, inplace=True)
 
