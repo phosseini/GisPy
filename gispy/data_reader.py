@@ -4,6 +4,7 @@ import spacy
 from spacy.language import Language
 import pandas as pd
 import numpy as np
+import itertools
 
 from os import listdir, path
 from os.path import isfile, join
@@ -217,3 +218,56 @@ class GisPyData:
                 "SMCAUSwn_a_path", "SMCAUSwn_a_lch", "SMCAUSwn_a_wup",
                 "SMCAUSwn_1p_binary", "SMCAUSwn_ap_binary", "SMCAUSwn_1_binary", "SMCAUSwn_a_binary",
                 "PCCNC", "WRDIMGc", "WRDHYPnv"]
+
+    @staticmethod
+    def get_variables_dict():
+        # sign: 1 -> positive
+        # sign: -1 -> negative
+        # gis = PCREFz + PCDCz + (zSMCAUSlsa - zSMCAUSwn) - PCCNCz - zWRDIMGc - zWRDHYPnv
+
+        dicts = list()
+
+        var1 = [{'vars': ['zCoREF'], 'sign': 1, 'flag': 1},
+                {'vars': ['zPCREF1'], 'sign': 1, 'flag': 1},
+                {'vars': ['zPCREFa'], 'sign': 1, 'flag': 1},
+                {'vars': ['zPCREF1p'], 'sign': 1, 'flag': 1},
+                {'vars': ['zPCREFap'], 'sign': 1, 'flag': 1}]
+
+        var3 = [{'vars': ['zSMCAUSe_1'], 'sign': 1, 'flag': 1},
+                {'vars': ['zSMCAUSe_a'], 'sign': 1, 'flag': 1},
+                {'vars': ['zSMCAUSe_1p'], 'sign': 1, 'flag': 1},
+                {'vars': ['zSMCAUSe_ap'], 'sign': 1, 'flag': 1}]
+
+        var4 = [{'vars': ['zSMCAUSwn_1p_path'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_1p_lch'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_1p_wup'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_ap_path'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_ap_lch'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_ap_wup'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_1_path'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_1_lch'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_1_wup'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_a_path'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_a_lch'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_a_wup'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_1p_binary'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_ap_binary'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_1_binary'], 'sign': -1, 'flag': 1},
+                {'vars': ['zSMCAUSwn_a_binary'], 'sign': -1, 'flag': 1}]
+
+        triples = list(itertools.product(var1, var3, var4))
+
+        for triple in triples:
+            vars_dict = {'var1': triple[0],
+                         'var2': {'vars': ['zPCDC'], 'sign': 1, 'flag': 1},
+                         'var3': triple[1],
+                         'var4': triple[2],
+                         'var5': {'vars': ['zPCCNC'], 'sign': -1, 'flag': 1},
+                         'var6': {'vars': ['zWRDIMGc'], 'sign': -1, 'flag': 1},
+                         'var7': {'vars': ['zWRDHYPnv'], 'sign': -1, 'flag': 1}}
+            dicts.append(vars_dict)
+        return dicts
+
+    @staticmethod
+    def generate_variables_dict_id(variables_dict):
+        return '#'.join(['#'.join(variables_dict[v]['vars']) for v in list(variables_dict.keys())])
