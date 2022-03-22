@@ -230,10 +230,10 @@ class GisPyData:
         dicts = list()
 
         var1 = [{'vars': ['zCoREF'], 'sign': 1, 'flag': 1},
-                {'vars': ['zPCREF1'], 'sign': 1, 'flag': 1},
-                {'vars': ['zPCREFa'], 'sign': 1, 'flag': 1},
-                {'vars': ['zPCREF1p'], 'sign': 1, 'flag': 1},
-                {'vars': ['zPCREFap'], 'sign': 1, 'flag': 1}]
+                {'vars': ['zPCREF_1'], 'sign': 1, 'flag': 1},
+                {'vars': ['zPCREF_a'], 'sign': 1, 'flag': 1},
+                {'vars': ['zPCREF_1p'], 'sign': 1, 'flag': 1},
+                {'vars': ['zPCREF_ap'], 'sign': 1, 'flag': 1}]
 
         var3 = [{'vars': ['zSMCAUSe_1'], 'sign': 1, 'flag': 1},
                 {'vars': ['zSMCAUSe_a'], 'sign': 1, 'flag': 1},
