@@ -400,18 +400,18 @@ class GIST:
         imageability_scores = list()
 
         # filtering out tokens we don't need
-        pos_filter = ['NUM', 'PUNCT', 'SYM']
+        # pos_filter = ['NUM', 'PUNCT', 'SYM']
+        pos_filter = []
         df_doc = df_doc.loc[~df_doc['token_pos'].isin(pos_filter)]
 
         for index, row in df_doc.iterrows():
-            token_text = row['token_text'].lower()
+            token_text = str(row['token_text']).lower()
             if token_text in self.megahr_dict:
                 concreteness_scores.append(self.megahr_dict[token_text][0])
                 imageability_scores.append(self.megahr_dict[token_text][1])
 
         if len(concreteness_scores) > 0 and len(imageability_scores) > 0:
-            return sum(concreteness_scores) / len(concreteness_scores), sum(imageability_scores) / len(
-                imageability_scores)
+            return statistics.mean(concreteness_scores), statistics.mean(imageability_scores)
         else:
             return None, None
 
