@@ -122,7 +122,7 @@ class Wolfe:
         :param plot: whether to plot scores
         :return:
         """
-        vars_dicts = GisPyData().get_variables_dict()
+        vars_dicts = GisPyData().get_variables_dict(gispy=use_gispy_vars)
         results = pd.DataFrame(
             columns=['vars_name', 'mean_gist_yes', 'mean_gist_no', 'distance', 'ttest_statistic',
                      'ttest_pvalue'])

@@ -222,49 +222,59 @@ class GisPyData:
                 "PCCNC", "WRDIMGc", "WRDHYPnv"]
 
     @staticmethod
-    def get_variables_dict():
+    def get_variables_dict(gispy=True):
         # sign: 1 -> positive
         # sign: -1 -> negative
         # gis = PCREFz + PCDCz + (zSMCAUSlsa - zSMCAUSwn) - PCCNCz - zWRDIMGc - zWRDHYPnv
 
         dicts = list()
 
-        var1 = [{'vars': ['zCoREF'], 'sign': 1, 'flag': 1},
-                {'vars': ['zPCREF_1'], 'sign': 1, 'flag': 1},
-                {'vars': ['zPCREF_a'], 'sign': 1, 'flag': 1},
-                {'vars': ['zPCREF_1p'], 'sign': 1, 'flag': 1},
-                {'vars': ['zPCREF_ap'], 'sign': 1, 'flag': 1}]
+        if gispy:
+            var1 = [{'vars': ['zCoREF'], 'sign': 1, 'flag': 1},
+                    {'vars': ['zPCREF_1'], 'sign': 1, 'flag': 1},
+                    {'vars': ['zPCREF_a'], 'sign': 1, 'flag': 1},
+                    {'vars': ['zPCREF_1p'], 'sign': 1, 'flag': 1},
+                    {'vars': ['zPCREF_ap'], 'sign': 1, 'flag': 1}]
 
-        var3 = [{'vars': ['zSMCAUSe_1'], 'sign': 1, 'flag': 1},
-                {'vars': ['zSMCAUSe_a'], 'sign': 1, 'flag': 1},
-                {'vars': ['zSMCAUSe_1p'], 'sign': 1, 'flag': 1},
-                {'vars': ['zSMCAUSe_ap'], 'sign': 1, 'flag': 1}]
+            var3 = [{'vars': ['zSMCAUSe_1'], 'sign': 1, 'flag': 1},
+                    {'vars': ['zSMCAUSe_a'], 'sign': 1, 'flag': 1},
+                    {'vars': ['zSMCAUSe_1p'], 'sign': 1, 'flag': 1},
+                    {'vars': ['zSMCAUSe_ap'], 'sign': 1, 'flag': 1}]
 
-        var4 = [{'vars': ['zSMCAUSwn_1p_path'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_1p_lch'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_1p_wup'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_ap_path'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_ap_lch'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_ap_wup'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_1_path'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_1_lch'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_1_wup'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_a_path'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_a_lch'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_a_wup'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_1p_binary'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_ap_binary'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_1_binary'], 'sign': -1, 'flag': 1},
-                {'vars': ['zSMCAUSwn_a_binary'], 'sign': -1, 'flag': 1}]
+            var4 = [{'vars': ['zSMCAUSwn_1p_path'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_1p_lch'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_1p_wup'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_ap_path'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_ap_lch'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_ap_wup'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_1_path'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_1_lch'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_1_wup'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_a_path'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_a_lch'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_a_wup'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_1p_binary'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_ap_binary'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_1_binary'], 'sign': -1, 'flag': 1},
+                    {'vars': ['zSMCAUSwn_a_binary'], 'sign': -1, 'flag': 1}]
 
-        triples = list(itertools.product(var1, var3, var4))
+            triples = list(itertools.product(var1, var3, var4))
 
-        for triple in triples:
-            vars_dict = {'var1': triple[0],
-                         'var2': {'vars': ['zPCDC'], 'sign': 1, 'flag': 1},
-                         'var3': triple[1],
-                         'var4': triple[2],
-                         'var5': {'vars': ['zPCCNC'], 'sign': -1, 'flag': 1},
+            for triple in triples:
+                vars_dict = {'var1': triple[0],
+                             'var2': {'vars': ['zPCDC'], 'sign': 1, 'flag': 1},
+                             'var3': triple[1],
+                             'var4': triple[2],
+                             'var5': {'vars': ['zPCCNC'], 'sign': -1, 'flag': 1},
+                             'var6': {'vars': ['zWRDIMGc'], 'sign': -1, 'flag': 1},
+                             'var7': {'vars': ['zWRDHYPnv'], 'sign': -1, 'flag': 1}}
+                dicts.append(vars_dict)
+        else:
+            vars_dict = {'var1': {'vars': ['PCREFz'], 'sign': 1, 'flag': 1},
+                         'var2': {'vars': ['PCDCz'], 'sign': 1, 'flag': 1},
+                         'var3': {'vars': ['zSMCAUSlsa'], 'sign': 1, 'flag': 1},
+                         'var4': {'vars': ['zSMCAUSwn'], 'sign': -1, 'flag': 1},
+                         'var5': {'vars': ['PCCNCz'], 'sign': -1, 'flag': 1},
                          'var6': {'vars': ['zWRDIMGc'], 'sign': -1, 'flag': 1},
                          'var7': {'vars': ['zWRDHYPnv'], 'sign': -1, 'flag': 1}}
             dicts.append(vars_dict)
