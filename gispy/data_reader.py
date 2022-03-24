@@ -219,7 +219,8 @@ class GisPyData:
                 "SMCAUSwn_1_path", "SMCAUSwn_1_lch", "SMCAUSwn_1_wup",
                 "SMCAUSwn_a_path", "SMCAUSwn_a_lch", "SMCAUSwn_a_wup",
                 "SMCAUSwn_1p_binary", "SMCAUSwn_ap_binary", "SMCAUSwn_1_binary", "SMCAUSwn_a_binary",
-                "PCCNC", "WRDIMGc", "WRDHYPnv"]
+                "PCCNC", "WRDIMGc", "PCCNC_mrc", "WRDIMGc_mrc",
+                "WRDHYPnv"]
 
     @staticmethod
     def get_variables_dict(gispy=True, custom_vars=[]):

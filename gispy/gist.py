@@ -142,6 +142,7 @@ class GIST:
                             SMCAUSwn = self._compute_SMCAUSwn(df_doc, token_ids_by_sentence)
                             PCDC = self._compute_PCDC(doc_sentences)
                             WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc_megahr(df_doc)
+                            WRDCNCc_mrc, WRDIMGc_mrc = self._compute_WRDCNCc_WRDIMGc_mrc(df_doc)
                             WRDHYPnv = self._compute_WRDHYPnv(df_doc)
                             print('#{} done'.format(i + 1))
                             df_docs = df_docs.append(
@@ -167,7 +168,9 @@ class GIST:
                                  'SMCAUSwn_a_lch': SMCAUSwn['SMCAUSwn_a_lch'],
                                  'SMCAUSwn_a_wup': SMCAUSwn['SMCAUSwn_a_wup'],
                                  'SMCAUSwn_a_binary': SMCAUSwn['SMCAUSwn_a_binary'],
-                                 "PCCNC": WRDCNCc, "WRDIMGc": WRDIMGc, "WRDHYPnv": WRDHYPnv},
+                                 "PCCNC": WRDCNCc, "WRDIMGc": WRDIMGc,
+                                 "PCCNC_mrc": WRDCNCc_mrc, "WRDIMGc_mrc": WRDIMGc_mrc,
+                                 "WRDHYPnv": WRDHYPnv},
                                 ignore_index=True)
                         except Exception as e:
                             docs_with_errors.append(txt_file)
@@ -375,21 +378,16 @@ class GIST:
         computing the document concreteness and imageability
         :return:
         """
-        conc_score = 0
-        img_score = 0
+        concreteness_scores = list()
+        imageability_scores = list()
         for index, row in df_doc.iterrows():
             records = find_mrc_word(row['token_text'], row['token_pos'])
-
             # there might be more than one record for the very word with its POS tag
             if len(records) > 0:
-                word_conc_score = 0
-                word_img_score = 0
                 for record in records:
-                    word_conc_score += record.conc
-                    word_img_score += record.imag
-                conc_score += (word_conc_score / len(records))
-                img_score += (word_img_score / len(records))
-        return conc_score / len(df_doc), img_score / len(df_doc)
+                    concreteness_scores.append(record.conc)
+                    imageability_scores.append(record.imag)
+        return statistics.mean(concreteness_scores), statistics.mean(imageability_scores)
 
     def _compute_WRDCNCc_WRDIMGc_megahr(self, df_doc):
         """
