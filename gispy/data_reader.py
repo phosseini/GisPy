@@ -219,7 +219,7 @@ class GisPyData:
                 "SMCAUSwn_1_path", "SMCAUSwn_1_lch", "SMCAUSwn_1_wup",
                 "SMCAUSwn_a_path", "SMCAUSwn_a_lch", "SMCAUSwn_a_wup",
                 "SMCAUSwn_1p_binary", "SMCAUSwn_ap_binary", "SMCAUSwn_1_binary", "SMCAUSwn_a_binary",
-                "PCCNC", "WRDIMGc", "PCCNC_mrc", "WRDIMGc_mrc",
+                "PCCNC_megahr", "WRDIMGc_megahr", "PCCNC_mrc", "WRDIMGc_mrc",
                 "WRDHYPnv"]
 
     @staticmethod
@@ -260,10 +260,10 @@ class GisPyData:
                         {'vars': ['zSMCAUSwn_1_binary'], 'sign': -1, 'flag': 1},
                         {'vars': ['zSMCAUSwn_a_binary'], 'sign': -1, 'flag': 1}]
 
-                var5 = [{'vars': ['zPCCNC'], 'sign': -1, 'flag': 1},
+                var5 = [{'vars': ['zPCCNC_megahr'], 'sign': -1, 'flag': 1},
                         {'vars': ['zPCCNC_mrc'], 'sign': -1, 'flag': 1}]
 
-                var6 = [{'vars': ['zWRDIMGc'], 'sign': -1, 'flag': 1},
+                var6 = [{'vars': ['zWRDIMGc_megahr'], 'sign': -1, 'flag': 1},
                         {'vars': ['zWRDIMGc_mrc'], 'sign': -1, 'flag': 1}]
             else:
                 var1 = [{'vars': [custom_vars[0]], 'sign': 1, 'flag': 1}]

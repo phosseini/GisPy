@@ -141,7 +141,7 @@ class GIST:
                                                                                                  token_ids_by_sentence)
                             SMCAUSwn = self._compute_SMCAUSwn(df_doc, token_ids_by_sentence)
                             PCDC = self._compute_PCDC(doc_sentences)
-                            WRDCNCc, WRDIMGc = self._compute_WRDCNCc_WRDIMGc_megahr(df_doc)
+                            WRDCNCc_megahr, WRDIMGc_megahr = self._compute_WRDCNCc_WRDIMGc_megahr(df_doc)
                             WRDCNCc_mrc, WRDIMGc_mrc = self._compute_WRDCNCc_WRDIMGc_mrc(df_doc)
                             WRDHYPnv = self._compute_WRDHYPnv(df_doc)
                             print('#{} done'.format(i + 1))
@@ -168,7 +168,7 @@ class GIST:
                                  'SMCAUSwn_a_lch': SMCAUSwn['SMCAUSwn_a_lch'],
                                  'SMCAUSwn_a_wup': SMCAUSwn['SMCAUSwn_a_wup'],
                                  'SMCAUSwn_a_binary': SMCAUSwn['SMCAUSwn_a_binary'],
-                                 "PCCNC": WRDCNCc, "WRDIMGc": WRDIMGc,
+                                 "PCCNC_megahr": WRDCNCc_megahr, "WRDIMGc_megahr": WRDIMGc_megahr,
                                  "PCCNC_mrc": WRDCNCc_mrc, "WRDIMGc_mrc": WRDIMGc_mrc,
                                  "WRDHYPnv": WRDHYPnv},
                                 ignore_index=True)
