@@ -259,20 +259,28 @@ class GisPyData:
                         {'vars': ['zSMCAUSwn_ap_binary'], 'sign': -1, 'flag': 1},
                         {'vars': ['zSMCAUSwn_1_binary'], 'sign': -1, 'flag': 1},
                         {'vars': ['zSMCAUSwn_a_binary'], 'sign': -1, 'flag': 1}]
+
+                var5 = [{'vars': ['zPCCNC'], 'sign': -1, 'flag': 1},
+                        {'vars': ['zPCCNC_mrc'], 'sign': -1, 'flag': 1}]
+
+                var6 = [{'vars': ['zWRDIMGc'], 'sign': -1, 'flag': 1},
+                        {'vars': ['zWRDIMGc_mrc'], 'sign': -1, 'flag': 1}]
             else:
                 var1 = [{'vars': [custom_vars[0]], 'sign': 1, 'flag': 1}]
                 var3 = [{'vars': [custom_vars[1]], 'sign': 1, 'flag': 1}]
                 var4 = [{'vars': [custom_vars[2]], 'sign': -1, 'flag': 1}]
+                var5 = [{'vars': [custom_vars[3]], 'sign': -1, 'flag': 1}]
+                var6 = [{'vars': [custom_vars[4]], 'sign': -1, 'flag': 1}]
 
-            triples = list(itertools.product(var1, var3, var4))
+            triples = list(itertools.product(var1, var3, var4, var5, var6))
 
             for triple in triples:
                 vars_dict = {'var1': triple[0],
                              'var2': {'vars': ['zPCDC'], 'sign': 1, 'flag': 1},
                              'var3': triple[1],
                              'var4': triple[2],
-                             'var5': {'vars': ['zPCCNC'], 'sign': -1, 'flag': 1},
-                             'var6': {'vars': ['zWRDIMGc'], 'sign': -1, 'flag': 1},
+                             'var5': triple[3],
+                             'var6': triple[4],
                              'var7': {'vars': ['zWRDHYPnv'], 'sign': -1, 'flag': 1}}
                 dicts.append(vars_dict)
         else:

@@ -100,8 +100,10 @@ class Wolfe:
         id_col = 'd_id'
 
         df_yes = df[
-            df[id_col].apply(lambda x: x in doc_filter and x.split("_")[0].startswith(prefix_names['gist_yes']))]
-        df_no = df[df[id_col].apply(lambda x: x in doc_filter and x.split("_")[0].startswith(prefix_names['gist_no']))]
+            df[id_col].apply(lambda x: (len(doc_filter) == 0 or x in doc_filter) and x.split("_")[0].startswith(
+                prefix_names['gist_yes']))]
+        df_no = df[df[id_col].apply(lambda x: (len(doc_filter) == 0 or x in doc_filter) and x.split("_")[0].startswith(
+            prefix_names['gist_no']))]
 
         ttest_result = st.ttest_ind(a=list(df_yes['gis']), b=list(df_no['gis']), equal_var=True)
 
@@ -112,7 +114,7 @@ class Wolfe:
 
         return results, df_yes, df_no
 
-    def run_benchmark(self, gispy_indices_file: str, prefix_names: dict, doc_filter: tuple, use_wolfe_vars=False,
+    def run_benchmark(self, gispy_indices_file: str, prefix_names: dict, doc_filter=[], use_wolfe_vars=False,
                       use_gispy_vars=True, custom_vars=[], plot=False):
         """
         running GIS score computation on a Wolfe benchmark
