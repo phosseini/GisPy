@@ -1,5 +1,6 @@
 import re
 import time
+import random
 import wayback
 import textract
 import pandas as pd
@@ -283,3 +284,16 @@ def read_word_text(file_path):
     text = re.sub(r'[\n]{2,}', '\n\n', text)
 
     return text
+
+
+def create_split(data, split_size=0.2):
+    """
+    randomly shuffling a list and creating two splits
+    :param data:
+    :param split_size:
+    :return:
+    """
+    random.Random(42).shuffle(data)
+    dev = data[:int(split_size * len(data))]
+    test = data[int(split_size * len(data)):]
+    return dev, test
