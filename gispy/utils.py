@@ -3,6 +3,7 @@ import time
 import random
 import wayback
 import textract
+import numpy as np
 import pandas as pd
 import xml.etree.ElementTree as ET
 
@@ -286,14 +287,40 @@ def read_word_text(file_path):
     return text
 
 
-def create_split(data, split_size=0.2):
+def create_split(data, split_size=0.7, random_seed=42):
     """
     randomly shuffling a list and creating two splits
     :param data:
     :param split_size:
+    :param random_seed:
     :return:
     """
-    random.Random(42).shuffle(data)
+    random.Random(random_seed).shuffle(data)
     dev = data[:int(split_size * len(data))]
     test = data[int(split_size * len(data)):]
     return dev, test
+
+
+def create_kfolds(labels, data_path, n_folds=5, split_seed=42):
+    d_ids = list(pd.read_csv(data_path)['d_id'])
+    no_d_ids = list(item for item in d_ids if item.startswith(labels[0]))
+    yes_d_ids = list(item for item in d_ids if item.startswith(labels[1]))
+    random.Random(split_seed).shuffle(no_d_ids)
+    random.Random(split_seed).shuffle(yes_d_ids)
+    no_folds = np.array_split(no_d_ids, n_folds)
+    yes_folds = np.array_split(yes_d_ids, n_folds)
+    random.Random(split_seed).shuffle(no_folds)
+    random.Random(split_seed).shuffle(yes_folds)
+    folds = list()
+    for i in range(len(no_folds)):
+        dev = list()
+        test = list()
+        for j in range(len(no_folds)):
+            if j != i:
+                dev.extend(no_folds[j])
+                dev.extend(yes_folds[j])
+            else:
+                test.extend(no_folds[j])
+                test.extend(yes_folds[j])
+        folds.append((dev, test))
+    return folds
