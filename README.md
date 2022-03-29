@@ -6,7 +6,9 @@ Our goal is to develop a tool and metric that estimates the capacity of text in 
 
 ### How to run GisPy
 1. Install the requirements: `pip install -r requirements.txt`
-   * We suggest you create a new virtual environment (e.g., a [conda enviroment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-with-commands)). 
+   * We suggest you create a new virtual environment (e.g., a [conda enviroment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-with-commands)).
+   * If you only want to run GisPy and don't need to run jupyter notebooks, you can skip installing the following packages:
+      * `matplotlib, textract, wayback`  
 2. Put all text documents separately as `.txt` files (one document per file) in the `/data/documents` folder.
    * Paragraphs in each document need to be spearated by [at least] one new line character (`\n`).  
 3. Run [`/gispy/run.py`](https://github.com/phosseini/gispy/blob/master/gispy/run.py) class: `python run.py [OUTPUT_FILE_NAME]`
