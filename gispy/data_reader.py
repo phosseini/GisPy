@@ -1,12 +1,10 @@
-import re
-
 import spacy
 from spacy.language import Language
-import pandas as pd
-import numpy as np
 import itertools
+import numpy as np
+import pandas as pd
 
-from os import listdir, path
+from os import listdir
 from os.path import isfile, join
 
 
@@ -168,42 +166,6 @@ class DataReader:
         return docs
 
 
-def convert_doc(doc_text):
-    """
-    converting a document to tokens with meta-information (e.g. POS tags, vector embeddings)
-    :param doc_text: text of a document
-    :return:
-    """
-
-    # u_id: unique identifier
-    df_doc = pd.DataFrame(columns=["u_id", "p_id", "s_id", "token_id", "token_text", "token_lemma", "token_pos"])
-    token_embeddings = dict()
-    paragraphs = doc_text.split('\n')
-    p_id = 0
-    u_id = 0
-    for paragraph in nlp_trf.pipe(paragraphs, disable=["parser"]):
-        s_id = 0
-        for sent in paragraph.sents:
-            tokens = [t for t in sent]
-            t_id = 0
-            for token in tokens:
-                df_doc = df_doc.append({"u_id": u_id,
-                                        "p_id": p_id,
-                                        "s_id": s_id,
-                                        "token_id": t_id,
-                                        "token_text": token.text.strip(),
-                                        "token_lemma": token.lemma_.strip(),
-                                        "token_pos": token.pos_},
-                                       ignore_index=True)
-                token_embeddings[u_id] = token.vector
-                u_id += 1
-                t_id += 1
-            s_id += 1
-        p_id += 1
-
-    return df_doc, token_embeddings
-
-
 class GisPyData:
     def __init__(self):
         pass
@@ -305,3 +267,39 @@ class GisPyData:
         vars_name_string = '#'.join(['#'.join(variables_dict[v]['vars']) for v in list(variables_dict.keys())])
         vars_name_list = vars_name_string.split('#')
         return vars_name_string, vars_name_list
+
+    @staticmethod
+    def convert_doc(doc_text):
+        """
+        converting a document to tokens with meta-information (e.g. POS tags, vector embeddings)
+        :param doc_text: text of a document
+        :return:
+        """
+
+        # u_id: unique identifier
+        df_doc = pd.DataFrame(columns=["u_id", "p_id", "s_id", "token_id", "token_text", "token_lemma", "token_pos"])
+        token_embeddings = dict()
+        paragraphs = doc_text.split('\n')
+        p_id = 0
+        u_id = 0
+        for paragraph in nlp_trf.pipe(paragraphs, disable=["parser"]):
+            s_id = 0
+            for sent in paragraph.sents:
+                tokens = [t for t in sent]
+                t_id = 0
+                for token in tokens:
+                    df_doc = df_doc.append({"u_id": u_id,
+                                            "p_id": p_id,
+                                            "s_id": s_id,
+                                            "token_id": t_id,
+                                            "token_text": token.text.strip(),
+                                            "token_lemma": token.lemma_.strip(),
+                                            "token_pos": token.pos_},
+                                           ignore_index=True)
+                    token_embeddings[u_id] = token.vector
+                    u_id += 1
+                    t_id += 1
+                s_id += 1
+            p_id += 1
+
+        return df_doc, token_embeddings

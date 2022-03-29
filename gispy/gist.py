@@ -16,7 +16,7 @@ from sentence_transformers import SentenceTransformer, util
 from utils import find_mrc_word
 from utils import get_causal_cues
 from utils import read_megahr_concreteness_imageability
-from data_reader import convert_doc, GisPyData
+from data_reader import GisPyData
 
 
 class GIST:
@@ -89,7 +89,8 @@ class GIST:
         :return:
         """
         df_cols = ["d_id", "text"]
-        df_cols.extend(GisPyData().get_gispy_index_columns())
+        gispy_data = GisPyData()
+        df_cols.extend(gispy_data.get_gispy_index_columns())
         df_docs = pd.DataFrame(columns=df_cols)
         docs_with_errors = list()
         with CoreNLPClient(
@@ -106,7 +107,7 @@ class GIST:
                     with open('{}/{}'.format(self.docs_path, txt_file), 'r') as input_file:
                         doc_text = input_file.read()
                         doc_text = self._clean_text(doc_text)
-                        df_doc, token_embeddings = convert_doc(doc_text)
+                        df_doc, token_embeddings = gispy_data.convert_doc(doc_text)
                         doc_sentences, n_paragraphs, n_sentences = self._get_doc_sentences(df_doc)
                         token_ids_by_sentence = self._get_doc_token_ids_by_sentence(df_doc)
                         # -------------------------------

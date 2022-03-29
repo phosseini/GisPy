@@ -8,8 +8,6 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 
 from typing import Tuple
-from bs4 import BeautifulSoup
-from bs4.element import Comment
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, MetaData, Table, and_
 
