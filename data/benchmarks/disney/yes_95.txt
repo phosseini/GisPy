@@ -1,0 +1,31 @@
+"Promising" results in Oxford trials of Hepatitis C vaccine
+
+A new vaccine developed by researchers at the University of Oxford has generated a strong immune response against the Hepatitis C virus in human volunteers.
+
+The vaccine is the first Hepatitis C inoculation to reach this stage of clinical trials, and the results have been promising. The 15 healthy human volunteers who took part in the phase 1 safety trial all responded positively.
+
+The Oxford University team, with colleagues from the Italian biotechnology company Okairos (now part of the transnational pharmaceutical company GlaxoSmithKline) and Stanford University in the United States of America, have published their results in the journal Science Translational Medicine.
+
+Currently, the efficacy of the vaccine is being tested in a trial with intravenous drug users – a group running a high risk of contracting Hepatitis C – in two sites in the USA. This is aiming to discover if the inoculation offers protection from infection of Hepatitis C in this group, compared with a placebo.
+
+The principle investigator Professor Ellie Barnes, of the Nuffield Department of Medicine at the University of Oxford, said, “The size and breadth of the immune responses seen in the healthy volunteers are unprecedented in magnitude for a hepatitis C vaccine”.
+
+The study was funded by the Medical Research Council and the European Union, with support from the Oxford Martin School at the University of Oxford and the National Institute for Health Research Oxford Biomedical Research Centre.
+
+180 million people world-wide are thought to suffer from Hepatitis C, which is a chronic viral infection. It is estimated that there are 300,000 cases in the United Kingdom. If left untreated, the virus causes liver cirrhosis in 10 – 40% of sufferers, and in some cases this could lead to liver failure and liver cancer.
+
+Nonetheless, in approximately 25% of cases, the immune response elicited by the viral presence in the body of infected individuals is able to overcome the infection, and naturally remove the virus. This mechanism of viral eradication can be targeted by researchers to develop effective treatments against Hepatitis C.
+
+In the past few years, new drugs have been developed which are effective against a number of different strains of hepatitis C. However, these are expensive, and require a prolonged course of treatment.
+
+As second-year Biological Sciences undergraduate Natasha Gillies explained, “An effective vaccine would possibly be a one-time preventative measure to inhibit the spread of the disease. Prevention is better than a cure.”
+
+Agreeing with this sentiment, first-year Biological Sciences graduate Ben Hopkins told Cherwell, “In terms of large scale public health issues, it’s easier to get people vaccinated on a one off system than give people a long course of drugs, which either they might not take, or they may be reluctant to take.”
+
+The research team at the University of Oxford are using two separate vaccine formulations. Firstly, an immune response against the hepatitis C virus is stimulated by the injection. Eight weeks later, a second vaccine boosts the immune response to a suitable level for effectively fighting off future infection.
+
+The researchers found that T cells, a type of white blood cell that is of key importance to the immune system and is at the core of adaptive immunity (the system that tailors the body’s immune response to specific pathogens), are crucial in eradicating the virus from the human body in those 25% of sufferers who are able to naturally clear the infection. The vaccine has consequently been designed to generate a strong T cell immune response.
+
+The level of the T cell response needed to prevent infection is unknown, but the study compares T cell response levels generated with the vaccine to those observed in people naturally able to overthrow the virus. The study found that after the second, booster inoculation, all 15 volunteers had large, broad and sustained T cells responses.
+
+Professor Barnes commented, “The T cell response is really high, and what’s promising is that this is a broad response. A range of different T cells are produced targeting different parts of the hepatitis virus. This is the first highly immunogenic T cell vaccine developed against hepatitis C. We found it to be safe and well tolerated in this group of 15 healthy volunteers. But we won’t really know if it works – if it is able to prevent hepatitis C infection – until we have the results of the efficacy studies in the USA.”

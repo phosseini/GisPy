@@ -1,0 +1,25 @@
+HPV vaccination rates among girls lowest in states with highest cervical cancer rates
+
+The percentage of girls who receive HPV vaccinations is considerably lower in states that have higher rates of cervical cancer incidence and mortality, according to study results presented at the American Association for Cancer Research Conference on the Science of Cancer Health Disparities in Racial/Ethnic Minorities and the Medically Underserved in San Antonio.
+
+“Cervical cancer incidence and mortality rates vary widely by state,” Jennifer L. Moss, MSPH, a doctoral student in the department of health behavior at the University of North Carolina Gillings School of Global Public Health, said in a press release. “Our data show that adolescent girls remain vulnerable to disease in areas where women already have a higher risk for developing and dying from cervical cancer. If more adolescents — both girls and boys — in these states received an HPV vaccine, their risk for HPV-related cancers would drop dramatically.”
+
+Moss and colleagues used the National Immunization Survey—Teen to calculate HPV vaccination rates in different states, and they used the United States Cancer Statistics database to calculate cancer rates.
+
+The researchers observed an inverse association between cervical cancer incidence and HPV vaccination initiation rates.
+
+For example, in Massachusetts — a state with a low risk for cervical cancer — about six of every 100,000 women develop cervical cancer each year and 69% of teen girls have initiated HPV vaccination, Moss and colleagues determined. In Arkansas, the cervical cancer incidence rate is considerably higher — 10 per 100,000 women — but the HPV vaccination initiation rate is only 41%.
+
+Results showed HPV vaccine initiation among adolescent girls was lower in states with higher levels of cervical cancer incidence (r=-.29) and mortality (r=-.46). In addition, vaccination initiation was lower among girls who lived in states with higher proportions of non-Hispanic black residents (r=-.28) and lower proportions of higher-income residents (r=.32), results showed.
+
+The proportion of girls who completed the three-dose HPV vaccination course was lower in states with higher levels of cervical cancer mortality (r=-.30) and higher in states with greater levels of adolescents’ contact with the health care system.
+
+HPV vaccination initiation among boys was lower in states with higher proportions of non-Hispanic white residents and lower proportions of residents of “other” races. However, HPV-related cancer incidence or mortality was not associated with HPV vaccination initiation among boys, Moss and colleagues concluded.
+
+“Teens do not visit their health care providers as often as younger children, so increasing the frequency and efficiency of preventive visits is really important for HPV vaccination and cancer prevention,” Moss said. “We know that a health care provider’s recommendation is the single biggest influence on whether an adolescent receives an HPV vaccine. So, we hope that the findings of our study impress upon clinicians — especially those practicing in states with higher cancer rates — that cancer prevention means recommending HPV vaccination to adolescent patients at every visit.”
+
+For more information:
+
+Moss JL. Abstract #B90. Presented at: American Association for Cancer Research Conference on the Science of Cancer Health Disparities in Racial/Ethnic Minorities and the Medically Underserved; Nov. 9-12, 2014; San Antonio.
+
+Disclosure: The study was funded by the NIH. The researchers report no relevant financial disclosures.

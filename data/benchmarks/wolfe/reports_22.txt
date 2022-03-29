@@ -1,0 +1,17 @@
+Facebook (FB) is under intense pressure to answer these questions — and more — after it admitted that a company linked to President Donald Trump's campaign had accessed and improperly stored a huge trove of its user data.
+The controversy erupted as UK media and The New York Times reported that data analysis firm Cambridge Analytica tried to influence how Americans voted using information gleaned from millions of Facebook profiles.
+Here's what you need to know.
+Facebook said it gave permission to University of Cambridge psychology professor Aleksandr Kogan to harvest information from users who downloaded his app — "thisisyourdigitallife."
+The app offered a personality test. But Facebook users who downloaded the app also gave the professor permission to collect data on their location, their friends and content they had "liked."
+That was allowed under Facebook's rules at the time.
+The New York Times, however, reported that Kogan provided that data — which included information from over 50 million profiles — to Cambridge Analytica, breaching Facebook's rules.
+Cambridge Analytica was working to develop techniques that could be used to influence voters.
+Facebook said it asked Cambridge Analytica to delete the data in 2015, but learned several days ago from "reports" that not all of it had been purged.
+Cambridge Analytica said that the data set revealed by The New York Times was not used "as part of the services it provided to the Donald Trump 2016 presidential campaign."
+The company's methods came under further scrutiny late Monday after a British television channel aired a report showing CEO Alexander Nix discussing potential bribery and entrapment of politicians.
+In the report, Nix is seen suggesting the encounters could be filmed and posted to the internet.
+Cambridge Analytica said in a statement that the undercover Channel 4 report was "edited and scripted to grossly misrepresent the nature of those conversations and how the company conducts its business."
+Nix said the company does not engage in bribery or entrapment.
+Facebook has been unable to shake off questions over its role in the 2016 presidential election.
+CEO Mark Zuckerberg initially expressed skepticism that Facebook could have been used to influence voters, but a series of revelations over Russian meddling have caused the company to make big changes in recent months.
+It has sought to crack down on fake news, undermine the business model used by trolls and make political advertising more transparent.

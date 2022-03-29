@@ -1,0 +1,51 @@
+Paul Offit and Rotavirus Vaccine: Deaths on VAERS
+
+In the developed world rotavirus infection does not seem to be associated with mortality: this is not quite so with rotavirus vaccines, including Merck's RotaTeq vaccine in which Professor Offit had a share.
+
+A table of cases of rotavirus reported by the UK National Health Service between 2000 and 2012 listed a remarkably consistent figure of around 15,000 annually  (approximately 200,000 cases): no deaths are mentioned. It was evident that when a vaccine, GSK’s Rotarix, was introduced to the British schedule last year it was to prevent diarrhoea not death.
+
+The original rotavirus vaccine RotaShield, marketed by Lederle, was withdrawn after a year because Intussusseptionof an association with a serious gastric condition intussusception in which the bowel folds in on itself causing a blockage. Intussusception can kill. Reports on VAERS (Vaccine Adverse Event Reporting System)  for Lederle’s RotaShield lists 124 reported cases of intussusception in one of which the patient died  (1 in 124). The newer products, Merck’s RotaTeq, which Paul Offit helped to develop and profitted from, and GSKs Rotarix are both associated with an elevated level of intussusception. Reports on VAERS (9 February 2015) for the Offit/Merck Rotateq vaccine introduced in 2006 list 1,068 cases of intussusception with 10 accompanying deaths  (1 in 107) while Rotarix (introduced in 2008?) has 553 cases of intussusception  and 11 deaths  (a very disturbing rate of 1 in 50). It is not known how many doses of the respective vaccines this represents.
+
+Intussusception is a symptom specifically associated with rotavirus vaccines. It should be borne in mind that these vaccines have seldom been administered separately from other vaccines, however reports of total outcomes on VAERS in which the patient died are alarmingly high:
+
+Rotashield 10
+
+Rotateq 303
+
+Rotarix 106
+
+Unspecified 16
+
+One of the evident problems is that exposure to multiple toxicities in one go might not just increase the overall risk of death it also makes it difficult to disentangle which vaccines are doing what. However, as a point of comparison there have been 425 deaths associated on VAERS with rotavirus vaccines since 2006 compared with a mere 329 for MMR since 1989.
+
+While listing on VAERS does not mean a vaccine injury report is confirmed it is also as a passive reporting database likely to under-report by many times and may represent numerically no more than 1 or 2% of cases.
+
+On March 22, 2010 the FDA suspended the use of GSK’s Rotarix vaccine after it was found to be contaminated with porcine circovirus type 1 (PCV-1). Then on May 6 the Offit/Merck version Rotateq was found to be contaminated not only by PCV-1  but another related virus, porcine circovirus type 2 (PCV-2).  On May 7, according to information on the FDA website a meeting was swiftly convened:
+
+to discuss the findings of PCV and PCV DNA in rotavirus vaccines.  Based on a careful evaluation of this information, a thorough review of the scientific literature, and input from scientific and public health experts, the Agency is revising its recommendation to temporarily suspend use of the Rotarix vaccine.  FDA has determined it is appropriate for clinicians and health care professionals to resume the use of Rotarix and to continue the use of RotaTeq.
+
+Evidently the system had to patch itself up rapidly when a product patented by its most prominent advocate was determined to be faulty.  Buried now in the product insert for Rotateq is the elliptical statement:
+
+In the manufacturing process for RotaTeq, a porcine-derived material is used. DNA from porcine circoviruses (PCV) 1 and 2 has been detected in RotaTeq. PCV-1 and PCV-2 are not known to cause disease in humans.
+
+But presumably not known not to cause disease in humans either. And it seems likely few  pediatricians or nurses draw the attention of parents to this matter in obtaining consent.
+
+According to an article by Dan Olmsted and Mark Blaxill written in 2009 Offit made at least $29m from his stake in Rotateq vaccine and took part in votes as a member of the Advisory Committee on Immunisation Practices to his own ultimate financial benefit.
+
+From FDA: Update on Recommendations for the Use of Rotavirus Vaccines, May 14, 2010
+
+Background
+
+On March 22, 2010, FDA provided an early communication regarding Rotarix, manufactured by GlaxoSmithKline Biologicals (GSK)  At that time, FDA recommended that clinicians and public health professionals in the United States temporarily suspend the use of Rotarix while the agency and manufacturer investigated the finding of DNA from porcine circovirus type 1 (PCV1) in the vaccine.  Since that time, both FDA and GSK have confirmed the presence of PCV1 in the vaccine.
+
+On May 6, 2010, FDA provided information about RotaTeq, manufactured by Merck & Co, Inc. FDA indicated that preliminary studies conducted by Merck identified fragments of DNA from PCV1 and from a related porcine circovirus type 2 (PCV2) in RotaTeq.  FDA noted that it would seek input from its Vaccines and Related Biological Products Advisory Committee (VRBPAC) and provide updates in the near future.
+
+Updated Recommendations
+
+FDA has evaluated laboratory results from the manufacturers and its own laboratories.  In addition, FDA’s VRBPAC convened on May 7, 2010 to discuss the findings of PCV and PCV DNA in rotavirus vaccines.  Based on a careful evaluation of this information, a thorough review of the scientific literature, and input from scientific and public health experts, the Agency is revising its recommendation to temporarily suspend use of the Rotarix vaccine.  FDA has determined it is appropriate for clinicians and health care professionals to resume the use of Rotarix and to continue the use of RotaTeq.
+
+FDA considered the following information in its decision:
+
+*Both vaccines have strong safety records, including clinical trials involving tens of thousands of patients as well as clinical experience with millions of recipients.  FDA has no evidence that either PCV1 or PCV2 poses a safety risk in humans, and notes that neither is known to cause infection or illness in humans.
+
+ *The benefits of the vaccines are substantial, and include prevention of hospitalization for severe rotavirus disease in the U.S. and of death in other parts of the world.  The benefits of the vaccines, which are known, outweigh the risk, which is theoretical.

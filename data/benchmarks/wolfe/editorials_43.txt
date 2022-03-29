@@ -1,0 +1,9 @@
+The news that an Uber self-driving vehicle has killed a pedestrian in the US has made headlines around the world.
+It's a reminder that the era of self-driving cars is fast approaching. Decades of research into advanced sensors, mapping, navigation and control methods have now come to fruition and autonomous cars are starting to hit the roads in pilot trials.
+But partial or full autonomy raises the question of who is to blame in the case of an accident involving a self-driving car.
+In conventional (human-driven) cars, the answer is usually simple: the driver is responsible because they are in control. When it comes to autonomous vehicles, it isn't so clear cut.
+We propose a blockchain-based framework that uses sensor data to ascertain liability in accidents involving self-driving cars.
+Uber has suspended self-driving car tests as US authorities gather data about the circumstances surrounding the accident, which involved a car moving in autonomous mode with an operator behind the wheel.
+For partially autonomous vehicles, which still involve human control, assigning liability depends on what action led to the collision and whether it was based on decisions by the driver or the vehicle. For fully autonomous vehicles, the blame can be assigned to, or shared by, one of many parties — including the manufacturer, the service centre and the vehicle owner.
+Manufacturers could be liable in the case of a design fault, the software provider for buggy system software, or the service centre for inadequate service to the vehicle. On the other hand, negligence liability might fall to the owner for failing to implement a software update from the manufacturer, or with the manufacturer if the accident could have been prevented by a human driver.
+In this complex web of potentially responsible parties, how can the circumstances surrounding an accident be determined?
