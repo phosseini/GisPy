@@ -15,7 +15,8 @@ class Wolfe:
     def __init__(self):
         self.text_files_folder_path = '../data/documents'
 
-    def convert_opinion_report_data(self, folder_path, create_text_file=False):
+    def convert_reports_editorials_data(self, folder_path, create_text_file=False):
+        # Editorials are saved in Wolfe's data as *opinion*, so *Editorials* and *Opinion* are the same category
         df = pd.DataFrame(columns=['title', 'type', 'url', 'text'])
         text = read_word_text(folder_path)
         lines = text.split('\n')
@@ -43,9 +44,11 @@ class Wolfe:
             ignore_index=True)
 
         df.reset_index()
+        prefixes = {'report': 'reports', 'opinion': 'editorials'}
         if create_text_file:
             for idx, row in df.iterrows():
-                with open('{}/{}_{}.txt'.format(self.text_files_folder_path, row['type'], idx), 'w') as text_file:
+                with open('{}/{}_{}.txt'.format(self.text_files_folder_path, prefixes[row['type']], idx),
+                          'w') as text_file:
                     text_file.write(row['text'])
         return df
 
