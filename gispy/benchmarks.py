@@ -192,47 +192,32 @@ class SummEval:
         with open(input_file_path, 'r') as input_file:
             lines = input_file.readlines()
 
-        df = pd.DataFrame(columns=["d_id", "text",
-                                   "coherence_expert",
-                                   "coherence_turker",
-                                   "consistency_expert",
-                                   "consistency_turker",
-                                   "fluency_expert",
-                                   "fluency_turker",
-                                   "relevance_expert",
-                                   "relevance_turker"
-                                   ])
+        records = pd.DataFrame(columns=["d_id", "text",
+                                        "coherence_expert",
+                                        "coherence_turker",
+                                        "consistency_expert",
+                                        "consistency_turker",
+                                        "fluency_expert",
+                                        "fluency_turker",
+                                        "relevance_expert",
+                                        "relevance_turker"
+                                        ])
 
         for line in lines:
             line = json.loads(line)
+            record = {"d_id": line["id"], "text": line['decoded']}
+            for annotation_type in ['expert_annotations', 'turker_annotations']:
+                scores = {'coherence': list(), 'consistency': list(), 'fluency': list(), 'relevance': list()}
+                annotations = line[annotation_type]
+                # since each text has multiple expert and MTurk annotators, we iterate through all annotations
+                for field in scores.keys():
+                    scores[field] = [ann[field] for ann in annotations]
 
-            fields_expert = {'coherence': [], 'consistency': [], 'fluency': [], 'relevance': []}
-            fields_turker = {'coherence': [], 'consistency': [], 'fluency': [], 'relevance': []}
-
-            anns_expert = line['expert_annotations']
-            anns_turker = line['turker_annotations']
-
-            for field in fields_expert.keys():
-                fields_expert[field] = [ann[field] for ann in anns_expert]
-                fields_turker[field] = [ann[field] for ann in anns_turker]
-
-            for key, value in fields_expert.items():
-                fields_expert[key] = sum(value) / len(value)
-            for key, value in fields_turker.items():
-                fields_turker[key] = sum(value) / len(value)
-
-            df = df.append({"d_id": line["id"], "text": line['decoded'],
-                            'coherence_expert': fields_expert['coherence'],
-                            'coherence_turker': fields_turker['coherence'],
-                            'consistency_expert': fields_expert['consistency'],
-                            'consistency_turker': fields_turker['consistency'],
-                            'fluency_expert': fields_expert['fluency'],
-                            'fluency_turker': fields_turker['fluency'],
-                            'relevance_expert': fields_expert['relevance'],
-                            'relevance_turker': fields_turker['relevance'], },
-                           ignore_index=True)
-        df.reset_index()
-        return df
+                for score_name, score_values in scores.items():
+                    record['{}_{}'.format(score_name, annotation_type.split('_')[0])] = statistics.mean(score_values)
+            records = records.append(record, ignore_index=True)
+        records.reset_index()
+        return records
 
     @staticmethod
     def summeval_eval(input_file, variables, use_wolfe_vars=False, use_gispy_vars=False):
