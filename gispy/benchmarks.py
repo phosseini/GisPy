@@ -220,27 +220,38 @@ class SummEval:
         return records
 
     @staticmethod
-    def summeval_eval(input_file, variables, use_wolfe_vars=False, use_gispy_vars=False):
-        df = pd.read_csv(input_file)
-        df = GIS().score(df, variables, wolfe=use_wolfe_vars, gispy=use_gispy_vars)
-
+    def summeval_eval(input_file, use_wolfe_vars=False, use_gispy_vars=False):
+        results = pd.DataFrame(columns=["vars_name",
+                                        "1_expert", "2_expert", "3_expert", "4_expert", "5_expert",
+                                        "1_turker", "2_turker", "3_turker", "4_turker", "5_turker"])
         df_og = pandas.read_excel('../data/SummEval.xlsx')
         labels = ['coherence_expert', 'coherence_turker']
-        scores = dict()
-        for label in labels:
-            scores[label] = dict()
-            for i in range(1, 6):
-                scores[label][i] = list()
-
-        for idx, row in df_og.iterrows():
-            record = df[df['d_id'].apply(lambda x: str(x.strip('.txt')) == 'se_{}_{}'.format(idx, row['id']))]
-            if len(record) == 1:
-                gis = float(record.iloc[0]['gis'])
-
-            for label_name in scores.keys():
-                label = float(row[label_name])
+        vars_dicts = GisPyData().get_variables_dict(gispy=use_gispy_vars, custom_vars=[])
+        for vars_dict in vars_dicts:
+            df = pd.read_csv(input_file)
+            df = GIS().score(df, vars_dict, wolfe=use_wolfe_vars, gispy=use_gispy_vars)
+            scores = dict()
+            for label in labels:
+                scores[label] = dict()
                 for i in range(1, 6):
-                    if i <= label < i + 1:
-                        scores[label_name][i].append(gis)
+                    scores[label][i] = list()
 
-        return scores
+            for idx, row in df_og.iterrows():
+                record = df[df['d_id'].apply(lambda x: x == row['d_text_id'])]
+                if len(record) == 1:
+                    gis = float(record.iloc[0]['gis'])
+
+                    for label_name in scores.keys():
+                        score = float(row[label_name])
+                        for i in range(1, 6):
+                            if i <= score < i + 1:
+                                scores[label_name][i].append(gis)
+                                break
+            vars_string, vars_list = GisPyData().generate_variables_dict_id(vars_dict)
+            result = {'vars_name': vars_string}
+            for annotator in ['expert', 'turker']:
+                for i in range(1, 6):
+                    result['{}_{}'.format(i, annotator)] = statistics.mean(scores['coherence_{}'.format(annotator)][i])
+            results = results.append(result, ignore_index=True)
+
+        return results
