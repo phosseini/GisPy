@@ -1,4 +1,4 @@
-# GisPy: Gist Inference Score Implementation in Python
+# GisPy: A Tool for Measuring Gist Inference Score in Text
 
 <p align="center">
   <img src='gispy.png' width='450' height='400' style="vertical-align:middle;margin:100px 50px">
