@@ -173,7 +173,7 @@ class Wolfe:
                     col_idx += 1
 
         for col in cols:
-            axis[col[1], col[2]].boxplot([df_gist[col[0]], df_no_gist[col[0]]], labels=['Gist', 'No Gist'])
+            axis[col[1], col[2]].boxplot([df_gist[col[0]], df_no_gist[col[0]]], labels=['High Gist', 'Low Gist'])
             axis[col[1], col[2]].set_title(col[0])
 
         axis[2, 1].set_axis_off()

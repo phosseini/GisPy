@@ -186,78 +186,73 @@ class GisPyData:
 
     @staticmethod
     def get_variables_dict(gispy=True, custom_vars=[]):
-        # sign: 1 -> positive
-        # sign: -1 -> negative
-        # gis = PCREFz + PCDCz + (zSMCAUSlsa - zSMCAUSwn) - PCCNCz - zWRDIMGc - zWRDHYPnv
+        """
+        creating a dictionary of indices for GIS calculation
+        :param gispy: binary to show either use GisPy or Coh-Metrix indices
+        :param custom_vars:
+        :return:
+        """
+        # weight: the weight associated with each index to enable weighted combination of indices
+        # weight: 0 --> ignore the index
+        # weight > 0 | weight < 0 --> include index and multiply it by the weight.
+        # default gis formula = PCREFz + PCDCz + (zSMCAUSlsa - zSMCAUSwn) - PCCNCz - zWRDIMGc - zWRDHYPnv
 
         dicts = list()
 
         if gispy:
             if len(custom_vars) == 0:
-                var1 = [{'vars': ['zCoREF'], 'sign': 1, 'flag': 1},
-                        {'vars': ['zPCREF_1'], 'sign': 1, 'flag': 1},
-                        {'vars': ['zPCREF_a'], 'sign': 1, 'flag': 1},
-                        {'vars': ['zPCREF_1p'], 'sign': 1, 'flag': 1},
-                        {'vars': ['zPCREF_ap'], 'sign': 1, 'flag': 1}]
+                var1 = [{'vars': ['zCoREF'], 'weight': 1},
+                        {'vars': ['zPCREF_1'], 'weight': 1},
+                        {'vars': ['zPCREF_a'], 'weight': 1},
+                        {'vars': ['zPCREF_1p'], 'weight': 1},
+                        {'vars': ['zPCREF_ap'], 'weight': 1}]
 
-                var3 = [{'vars': ['zSMCAUSe_1'], 'sign': 1, 'flag': 1},
-                        {'vars': ['zSMCAUSe_a'], 'sign': 1, 'flag': 1},
-                        {'vars': ['zSMCAUSe_1p'], 'sign': 1, 'flag': 1},
-                        {'vars': ['zSMCAUSe_ap'], 'sign': 1, 'flag': 1}]
+                var3 = [{'vars': ['zSMCAUSe_1'], 'weight': 1},
+                        {'vars': ['zSMCAUSe_a'], 'weight': 1},
+                        {'vars': ['zSMCAUSe_1p'], 'weight': 1},
+                        {'vars': ['zSMCAUSe_ap'], 'weight': 1}]
 
-                # var4 = [{'vars': ['zSMCAUSwn_1p_path'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_1p_lch'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_1p_wup'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_ap_path'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_ap_lch'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_ap_wup'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_1_path'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_1_lch'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_1_wup'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_a_path'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_a_lch'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_a_wup'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_1p_binary'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_ap_binary'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_1_binary'], 'sign': -1, 'flag': 1},
-                #         {'vars': ['zSMCAUSwn_a_binary'], 'sign': -1, 'flag': 1}]
+                var4 = [{'vars': ['zSMCAUSwn_1p_binary'], 'weight': -1},
+                        {'vars': ['zSMCAUSwn_ap_binary'], 'weight': -1},
+                        {'vars': ['zSMCAUSwn_1_binary'], 'weight': -1},
+                        {'vars': ['zSMCAUSwn_a_binary'], 'weight': -1}]
 
-                var4 = [{'vars': ['zSMCAUSwn_1p_binary'], 'sign': -1, 'flag': 1},
-                        {'vars': ['zSMCAUSwn_ap_binary'], 'sign': -1, 'flag': 1},
-                        {'vars': ['zSMCAUSwn_1_binary'], 'sign': -1, 'flag': 1},
-                        {'vars': ['zSMCAUSwn_a_binary'], 'sign': -1, 'flag': 1}]
+                # three other implementations for var4 with the following postfixes, if one would like to test them:
+                # *_path
+                # *_lch
+                # *_wup
 
-                var5 = [{'vars': ['zPCCNC_megahr'], 'sign': -1, 'flag': 1},
-                        {'vars': ['zPCCNC_mrc'], 'sign': -1, 'flag': 1}]
+                var5 = [{'vars': ['zPCCNC_megahr'], 'weight': -1},
+                        {'vars': ['zPCCNC_mrc'], 'weight': -1}]
 
-                var6 = [{'vars': ['zWRDIMGc_megahr'], 'sign': -1, 'flag': 1},
-                        {'vars': ['zWRDIMGc_mrc'], 'sign': -1, 'flag': 1}]
+                var6 = [{'vars': ['zWRDIMGc_megahr'], 'weight': -1},
+                        {'vars': ['zWRDIMGc_mrc'], 'weight': -1}]
             else:
-                var1 = [{'vars': [custom_vars[0]], 'sign': 1, 'flag': 1}]
-                var3 = [{'vars': [custom_vars[1]], 'sign': 1, 'flag': 1}]
-                var4 = [{'vars': [custom_vars[2]], 'sign': -1, 'flag': 1}]
-                var5 = [{'vars': [custom_vars[3]], 'sign': -1, 'flag': 1}]
-                var6 = [{'vars': [custom_vars[4]], 'sign': -1, 'flag': 1}]
+                var1 = [{'vars': [custom_vars[0]], 'weight': 1}]
+                var3 = [{'vars': [custom_vars[1]], 'weight': 1}]
+                var4 = [{'vars': [custom_vars[2]], 'weight': -1}]
+                var5 = [{'vars': [custom_vars[3]], 'weight': -1}]
+                var6 = [{'vars': [custom_vars[4]], 'weight': -1}]
 
             triples = list(itertools.product(var1, var3, var4, var5, var6))
 
             for triple in triples:
                 vars_dict = {'var1': triple[0],
-                             'var2': {'vars': ['zPCDC'], 'sign': 1, 'flag': 1},
+                             'var2': {'vars': ['zPCDC'], 'weight': 1},
                              'var3': triple[1],
                              'var4': triple[2],
                              'var5': triple[3],
                              'var6': triple[4],
-                             'var7': {'vars': ['zWRDHYPnv'], 'sign': -1, 'flag': 1}}
+                             'var7': {'vars': ['zWRDHYPnv'], 'weight': -1}}
                 dicts.append(vars_dict)
         else:
-            vars_dict = {'var1': {'vars': ['PCREFz'], 'sign': 1, 'flag': 1},
-                         'var2': {'vars': ['PCDCz'], 'sign': 1, 'flag': 1},
-                         'var3': {'vars': ['zSMCAUSlsa'], 'sign': 1, 'flag': 1},
-                         'var4': {'vars': ['zSMCAUSwn'], 'sign': -1, 'flag': 1},
-                         'var5': {'vars': ['PCCNCz'], 'sign': -1, 'flag': 1},
-                         'var6': {'vars': ['zWRDIMGc'], 'sign': -1, 'flag': 1},
-                         'var7': {'vars': ['zWRDHYPnv'], 'sign': -1, 'flag': 1}}
+            vars_dict = {'var1': {'vars': ['PCREFz'], 'weight': 1},
+                         'var2': {'vars': ['PCDCz'], 'weight': 1},
+                         'var3': {'vars': ['zSMCAUSlsa'], 'weight': 1},
+                         'var4': {'vars': ['zSMCAUSwn'], 'weight': -1},
+                         'var5': {'vars': ['PCCNCz'], 'weight': -1},
+                         'var6': {'vars': ['zWRDIMGc'], 'weight': -1},
+                         'var7': {'vars': ['zWRDHYPnv'], 'weight': -1}}
             dicts.append(vars_dict)
 
         return dicts

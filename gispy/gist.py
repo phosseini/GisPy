@@ -732,8 +732,7 @@ class GIS:
         for idx, row in df.iterrows():
             gis = 0
             for variable_name, variable in variables.items():
-                gis += variable['sign'] * statistics.mean([row[index_name] for index_name in variable['vars']]) * \
-                       variable['flag']
+                gis += variable['weight'] * statistics.mean([row[index_name] for index_name in variable['vars']])
             df.loc[idx, "gis"] = gis
 
         return df
