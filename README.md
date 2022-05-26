@@ -19,6 +19,14 @@ Inspired by the definition of Gist Inference Score (GIS) by [Wolfe et al. (2019)
 4. Run [`/gispy/run.py`](https://github.com/phosseini/gispy/blob/master/gispy/run.py) class: `python run.py [OUTPUT_FILE_NAME]`
     * `OUTPUT_FILE_NAME`: name of the output file in `.csv` format where results will be saved.
 
+
+### List of files
+* **Benchmark 1**: [wolfe_reports_editorials.csv](https://github.com/phosseini/GisPy/blob/master/data/benchmarks/wolfe_reports_editorials.csv)
+* **Benchmark 2**: [wolfe_reports_editorials.csv](https://github.com/phosseini/GisPy/blob/master/data/benchmarks/wolfe_reports_editorials.csv)
+* **Benchmark 3**: [Disney](https://github.com/phosseini/GisPy/tree/master/data/benchmarks/disney)
+* [`experiments.ipynb`](https://github.com/phosseini/GisPy/blob/master/notebooks/experiments.ipynb): all experiments including the robustness tests on three benchmarks.
+* [`benchmarks.ipynb`](https://github.com/phosseini/GisPy/blob/master/notebooks/benchmarks.ipynb): preprocessing Wolfe's benchmark files.
+
 ### Gist Inference Score (GIS) formula
 
 ```
