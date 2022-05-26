@@ -1,12 +1,12 @@
-# GisPy: Gist Inference Score Implementation in Python
+# GisPy: A Tool for Measuring Gist Inference Score in Text
 
 <p align="center">
   <img src='gispy.png' width='450' height='400' style="vertical-align:middle;margin:100px 50px">
 </p>
 
-**What is Gist?** Based on Fuzzy-trace theory (FTT), when individuals read a piece of text, there are two mental representations encoded in parallel in their mind including 1) `gist` and 2) `verbatim`. While verbatim is related to surface-level information in the text, gist represents the bottom-line meaning and underlying semantics of it. Inspired by the Gist Inference Score (GIS) formula introduced by [Wolfe et al. (2019)](https://link.springer.com/content/pdf/10.3758/s13428-019-01284-4.pdf) and implementation of coherence/cohesion indices by [Coh-Metrix](http://cohmetrix.com/), we leverage text analysis and Natural Language Processing (NLP) tools to implement and improve GIS in Python. 
+**What is Gist?** Based on Fuzzy-trace theory (FTT), when individuals read a piece of text, there are two mental representations encoded in parallel in their mind including 1) **gist** and 2) **verbatim**. While verbatim is related to surface-level information in the text, gist represents the bottom-line meaning and underlying semantics of it.
 
-Our goal is to develop a tool and metric that estimates the capacity of text in creating a coherent gist and mental representation in the human brain/mind.
+Inspired by the definition of Gist Inference Score (GIS) by [Wolfe et al. (2019)](https://link.springer.com/content/pdf/10.3758/s13428-019-01284-4.pdf) and implementation of coherence/cohesion indices in [Coh-Metrix](http://cohmetrix.com/), we developed `GisPy`, a tool for measuring GIS in text.
 
 ### How to run GisPy
 1. Install the requirements: `pip install -r requirements.txt`
