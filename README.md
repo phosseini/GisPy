@@ -19,6 +19,10 @@ Inspired by the definition of Gist Inference Score (GIS) by [Wolfe et al. (2019)
 4. Run [`/gispy/run.py`](https://github.com/phosseini/gispy/blob/master/gispy/run.py) class: `python run.py [OUTPUT_FILE_NAME]`
     * `OUTPUT_FILE_NAME`: name of the output file in `.csv` format where results will be saved.
 
+
+### List of files
+* [`experiments.ipynb`](https://github.com/phosseini/GisPy/blob/master/notebooks/experiments.ipynb): all experiments including the robustness tests on three benchmarks.
+
 ### Gist Inference Score (GIS) formula
 
 ```
