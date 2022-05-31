@@ -37,3 +37,13 @@ GIS = Referential Cohesion
       - Imageability 
       - Hypernymy Nouns & Verbs
 ```
+
+### Citation
+```bibtex
+@article{hosseini2022gispy,
+  title={GisPy: A Tool for Measuring Gist Inference Score in Text},
+  author={Hosseini, Pedram and Wolfe, Christopher R and Diab, Mona and Broniatowski, David A},
+  journal={arXiv preprint arXiv:2205.12484},
+  year={2022}
+}
+```
