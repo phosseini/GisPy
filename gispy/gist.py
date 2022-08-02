@@ -92,7 +92,7 @@ class GIST:
         gispy_data = GisPyData()
         df_cols.extend(gispy_data.get_gispy_index_columns())
         df_docs = pd.DataFrame(columns=df_cols)
-        docs_with_errors = list()
+        errors_log = list()
         with CoreNLPClient(
                 annotators=['tokenize', 'ssplit', 'pos', 'lemma', 'ner', 'parse', 'coref'],
                 threads=10,
@@ -111,15 +111,20 @@ class GIST:
                         doc_sentences, n_paragraphs, n_sentences = self._get_doc_sentences(df_doc)
                         token_ids_by_sentence = self._get_doc_token_ids_by_sentence(df_doc)
                         # -------------------------------
-                        # finding the coref using corenlp
-                        coref_scores = list()
-                        for p_id, p_sentences in doc_sentences.items():
-                            paragraph_text = ' '.join(p_sentences)
-                            ann = client.annotate(paragraph_text)
-                            chain_count = len(list(ann.corefChain))
-                            coref_score = chain_count / len(p_sentences)
-                            coref_scores.append(coref_score)
-                        CoREF = statistics.mean(coref_scores)
+                        # computing the coref using corenlp
+                        try:
+                            coref_scores = list()
+                            for p_id, p_sentences in doc_sentences.items():
+                                paragraph_text = ' '.join(p_sentences)
+                                ann = client.annotate(paragraph_text)
+                                chain_count = len(list(ann.corefChain))
+                                coref_score = chain_count / len(p_sentences)
+                                coref_scores.append(coref_score)
+                            CoREF = statistics.mean(coref_scores)
+                        except Exception as e:
+                            CoREF = 0
+                            errors_log.append('file: {}, message: {}'.format(txt_file, str(e)))
+                            print('Computing CoREF failed. Message: {}'.format(str(e)))
                         # -------------------------------
                         sentence_embeddings = dict()
                         all_sentences = list()
@@ -174,7 +179,7 @@ class GIST:
                                  "WRDHYPnv": WRDHYPnv},
                                 ignore_index=True)
                         except Exception as e:
-                            docs_with_errors.append(txt_file)
+                            errors_log.append('file: {}, message: {}'.format(txt_file, str(e)))
                             print(e)
             else:
                 raise Exception(
@@ -182,7 +187,7 @@ class GIST:
                         self.docs_path))
 
         print('computing indices for documents is done.')
-        print('# of documents with error: {}'.format(len(docs_with_errors)))
+        print('# of documents with error: {}'.format(len(errors_log)))
 
         return df_docs
 
