@@ -26,9 +26,21 @@ Inspired by the definition of Gist Inference Score (GIS) by [Wolfe et al. (2019)
 GIS will be computed based on the indices listed in [gis_config.json](https://github.com/phosseini/GisPy/blob/master/gispy/gis_config.json) file. This file is a dictionary of indices with their associated weights to give you maximum flexibility about how to use GisPy indices when computing the GIS scores. You can pick any of the indices from the following table. By default in the config file, we have listed the indices that are used in the original GIS formula. Format of the config file is like the following:
 ```
 {
-  "index_name_1": weight of index_name_1,
+  "index_1": weight of index_1,
   ...
-  "index_name_n": weight of index_name_n
+  "index_n": weight of index_n
+}
+```
+An example:
+```
+{
+  "PCREF_ap": 1,
+  "PCDC": 1,
+  "SMCAUSe_1p": 1,
+  "SMCAUSwn_a_binary": -1,
+  "PCCNC_megahr": -1,
+  "WRDIMGc_megahr": -1,
+  "WRDHYPnv": -1
 }
 ```
 `weight` is a real number that will be multiplied by the mean of index values when we linearly combine the index values in the GIS formula. If you want to ignore an index, you can either not include it in the dictionary at all, or you can simply set its `weight` to `0`.
