@@ -36,6 +36,7 @@ def main(argv):
         try:
             vars_dict = GisPyData().convert_config_to_vars_dict(gis_config)
             df_scores = GIS().score(df_scores, vars_dict, gispy=True)
+            print('>>> computing GIS scores is completed.')
         except Exception as e:
             print('Error in computing the GIS.')
             print(e)
