@@ -31,7 +31,7 @@ GIS will be computed based on the indices listed in [gis_config.json](https://gi
   "index_name_n": weight of index_name_n
 }
 ```
-`weight` is a number that will be multiplied by the mean of index values when we linearly combine the index values in the GIS formula. If you want to ignore an index, you can either not include it in the formula at all, or you can simply set its `weight` to `0`.
+`weight` is a real number that will be multiplied by the mean of index values when we linearly combine the index values in the GIS formula. If you want to ignore an index, you can either not include it in the formula at all, or you can simply set its `weight` to `0`.
 
 
 ### List of GisPy indices
