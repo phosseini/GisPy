@@ -186,8 +186,17 @@ class GIST:
                     'The document directory path you are using does not exist.\nCurrent path: {}'.format(
                         self.docs_path))
 
-        print('computing indices for documents is done.')
-        print('# of documents with error: {}'.format(len(errors_log)))
+        print('>>> computing indices for documents is done.')
+        print('\n================= Report ==================')
+        print('| # successfully completed documents | {}'.format(len(df_docs)))
+        print('| # failed documents                 | {}'.format(len(errors_log)))
+        print('===========================================\n')
+        # writing error logs into a file
+        if len(errors_log) > 0:
+            with open(r'errors_log.txt', 'w') as fp:
+                for error_log in errors_log:
+                    fp.write("{}\n".format(error_log))
+                print('>>> error logs written in the following file (if there was any error): errors_log.txt')
 
         return df_docs
 

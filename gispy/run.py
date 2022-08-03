@@ -24,8 +24,8 @@ def main(argv):
 
         # saving the result
         df_scores.to_csv(file_path)
-        print('computing GIS is done. results are saved at /{}'.format(file_path))
-        print('Running time: {}'.format(stop - start))
+        print('Results are saved at: /{}'.format(file_path))
+        print('Running time: {}\n'.format(stop - start))
     else:
         print(usage_msg)
         exit(1)
