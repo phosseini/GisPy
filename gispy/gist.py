@@ -25,7 +25,7 @@ class GIST:
         self.docs_path = docs_path
 
         # loading parameters
-        config_path = 'gist_config.json'
+        config_path = 'gispy_config.json'
         if os.path.exists(config_path):
             with open(config_path) as f:
                 params = json.load(f)
@@ -83,7 +83,7 @@ class GIST:
         text = re.sub(r'\n+', '\n', text).strip()
         return text
 
-    def compute_scores(self):
+    def compute_indices(self):
         """
         computing the Gist Inference Score (GIS) for a collection of documents
         :return:
@@ -711,7 +711,7 @@ class GIS:
             return df[index_name].map(
                 lambda x: (x - self.wolfe_mean_sd[index_name]['mean']) / self.wolfe_mean_sd[index_name]['sd'])
         else:
-            return stats.zscore(df[index_name], nan_policy='omit')
+            return stats.zscore(df[index_name].astype(float), nan_policy='omit')
 
     def score(self, df, variables: dict, wolfe=False, gispy=False):
         """

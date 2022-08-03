@@ -185,6 +185,13 @@ class GisPyData:
                 "WRDHYPnv"]
 
     @staticmethod
+    def convert_config_to_vars_dict(config_dict):
+        vars_dict = dict()
+        for index, (key, value) in enumerate(config_dict.items()):
+            vars_dict["var{}".format(index)] = {'vars': ["z{}".format(key)], 'weight': value}
+        return vars_dict
+
+    @staticmethod
     def get_variables_dict(gispy=True, custom_vars=[]):
         """
         creating a dictionary of indices for GIS calculation
@@ -234,15 +241,15 @@ class GisPyData:
                 var5 = [{'vars': [custom_vars[3]], 'weight': -1}]
                 var6 = [{'vars': [custom_vars[4]], 'weight': -1}]
 
-            triples = list(itertools.product(var1, var3, var4, var5, var6))
+            products = list(itertools.product(var1, var3, var4, var5, var6))
 
-            for triple in triples:
-                vars_dict = {'var1': triple[0],
+            for variables in products:
+                vars_dict = {'var1': variables[0],
                              'var2': {'vars': ['zPCDC'], 'weight': 1},
-                             'var3': triple[1],
-                             'var4': triple[2],
-                             'var5': triple[3],
-                             'var6': triple[4],
+                             'var3': variables[1],
+                             'var4': variables[2],
+                             'var5': variables[3],
+                             'var6': variables[4],
                              'var7': {'vars': ['zWRDHYPnv'], 'weight': -1}}
                 dicts.append(vars_dict)
         else:
