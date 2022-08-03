@@ -23,7 +23,7 @@ Inspired by the definition of Gist Inference Score (GIS) by [Wolfe et al. (2019)
     * Indices and the z-scores of indices
 
 ### :information_source: Important
-GIS will be computed based on the indices listed in [gis_config.json](https://github.com/phosseini/GisPy/blob/master/gispy/gis_config.json) file. This file is a dictionary of indices with their associated weights to give you maximum flexibility about how to use GisPy indices when computing the GIS scores. You can pick any of the indices from the following table. By default in the config file, we have listed the indices that are used in the original GIS formula. Format of the config file is like the following:
+GIS will be computed based on the indices listed in [gis_config.json](https://github.com/phosseini/GisPy/blob/master/gispy/gis_config.json) file. This file is a dictionary of indices with their associated weights to give you maximum flexibility about how to use GisPy indices when computing the GIS scores. You can pick any of the indices from the following table (List of GisPy indices). By default in the config file, we have listed the indices that are used in the original GIS formula. Format of the config file is like the following:
 ```
 {
   "index_1": weight of index_1,
