@@ -31,7 +31,7 @@ def main(argv):
             exit(1)
 
         start = timeit.default_timer()
-        df_scores = GIST(docs_path='../data/documents').compute_indices()
+        df_scores = GIST(docs_path='../data/documents').compute_indices(gis_config)
 
         try:
             vars_dict = GisPyData().convert_config_to_vars_dict(gis_config)

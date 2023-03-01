@@ -83,7 +83,7 @@ class GIST:
         text = re.sub(r'\n+', '\n', text).strip()
         return text
 
-    def compute_indices(self):
+    def compute_indices(self, gis_config):
         """
         computing the Gist Inference Score (GIS) for a collection of documents
         :return:
@@ -112,19 +112,22 @@ class GIST:
                         token_ids_by_sentence = self._get_doc_token_ids_by_sentence(df_doc)
                         # -------------------------------
                         # computing the coref using corenlp
-                        try:
-                            coref_scores = list()
-                            for p_id, p_sentences in doc_sentences.items():
-                                paragraph_text = ' '.join(p_sentences)
-                                ann = client.annotate(paragraph_text)
-                                chain_count = len(list(ann.corefChain))
-                                coref_score = chain_count / len(p_sentences)
-                                coref_scores.append(coref_score)
-                            CoREF = statistics.mean(coref_scores)
-                        except Exception as e:
+                        if 'CoREF' in gis_config and gis_config['CoREF'] != 0:
+                            try:
+                                coref_scores = list()
+                                for p_id, p_sentences in doc_sentences.items():
+                                    paragraph_text = ' '.join(p_sentences)
+                                    ann = client.annotate(paragraph_text)
+                                    chain_count = len(list(ann.corefChain))
+                                    coref_score = chain_count / len(p_sentences)
+                                    coref_scores.append(coref_score)
+                                CoREF = statistics.mean(coref_scores)
+                            except Exception as e:
+                                CoREF = 0
+                                errors_log.append('file: {}, message: {}'.format(txt_file, str(e)))
+                                print('Computing CoREF failed. Message: {}'.format(str(e)))
+                        else:
                             CoREF = 0
-                            errors_log.append('file: {}, message: {}'.format(txt_file, str(e)))
-                            print('Computing CoREF failed. Message: {}'.format(str(e)))
                         # -------------------------------
                         sentence_embeddings = dict()
                         all_sentences = list()
