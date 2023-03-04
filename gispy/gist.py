@@ -78,7 +78,9 @@ class GIST:
     def _clean_text(text):
         encoded_text = text.encode("ascii", "ignore")
         text = encoded_text.decode()
-        text = text.replace('…', '...')
+        # text = text.replace('…', '...')
+        text = text.replace('…', ' ')
+        text = re.sub(r'(?<!\n)\n(?!\n)', '', text)
         text = re.sub(' +', ' ', text)
         text = re.sub(r'\n+', '\n', text).strip()
         return text
@@ -104,8 +106,20 @@ class GIST:
                 print('total # of documents: {}'.format(len(txt_files)))
                 print('computing indices for documents...')
                 for i, txt_file in enumerate(txt_files):
-                    with open('{}/{}'.format(self.docs_path, txt_file), 'r') as input_file:
-                        doc_text = input_file.read()
+                    encodings = ['utf-8', 'iso-8859-1']
+                    doc_text = None
+
+                    # trying multiple encodings in case there's any error with one encoding
+                    for encoding in encodings:
+                        try:
+                            with open('{}/{}'.format(self.docs_path, txt_file), encoding=encoding) as input_file:
+                                doc_text = input_file.read()
+                                break
+                        except UnicodeDecodeError:
+                            continue
+
+                    # if the input file is successfully read, doc_text should not be empty.
+                    if doc_text is not None:
                         doc_text = self._clean_text(doc_text)
                         df_doc, token_embeddings = gispy_data.convert_doc(doc_text)
                         doc_sentences, n_paragraphs, n_sentences = self._get_doc_sentences(df_doc)
@@ -184,12 +198,15 @@ class GIST:
                         except Exception as e:
                             errors_log.append('file: {}, message: {}'.format(txt_file, str(e)))
                             print(e)
+                    else:
+                        errors_log.append('file: {}, message: {}'.format(txt_file, str(e)))
+                        print('Error in reading the following document: {}, detail: {}'.format(txt_file, str(e)))
             else:
                 raise Exception(
                     'The document directory path you are using does not exist.\nCurrent path: {}'.format(
                         self.docs_path))
 
-        print('>>> computing indices for documents is done.')
+        print('\n>>> computing indices for documents is done.')
         print('\n================= Report ==================')
         print('| # successfully completed documents | {}'.format(len(df_docs)))
         print('| # failed documents                 | {}'.format(len(errors_log)))
