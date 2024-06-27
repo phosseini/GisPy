@@ -400,7 +400,7 @@ class GIST:
 
                 hypernym_path_length = 0
                 for synset in synsets:
-                    hypernym_path_length += len(synset.hypernym_paths())
+                    hypernym_path_length += statistics.mean(map(lambda path: len(path), synset.hypernym_paths()))
                 # computing the average length of hypernym path
                 hypernym_score = hypernym_path_length / len(synsets)
                 scores.append(hypernym_score)
