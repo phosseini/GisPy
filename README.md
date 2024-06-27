@@ -4,7 +4,11 @@
   <img src='gispy.png' width='450' height='400' style="vertical-align:middle;margin:100px 50px">
 </p>
 
-**What is Gist?** Based on Fuzzy-trace theory (FTT), when individuals read a piece of text, there are two mental representations encoded in parallel in their mind including 1) **gist** and 2) **verbatim**. While verbatim is related to surface-level information in the text, gist represents the bottom-line meaning and underlying semantics of it.
+#### Notes:
+**[06-26-2024]** There was a minor bug in the implementation of `WRDHYPnv` that has now been fixed (thanks to [@amethystant](https://github.com/amethystant)). It is worth considering this update when reproducing the experiments in our paper.
+
+### What is Gist?
+Based on Fuzzy-trace theory (FTT), when individuals read a piece of text, there are two mental representations encoded in parallel in their mind including 1) **gist** and 2) **verbatim**. While verbatim is related to surface-level information in the text, gist represents the bottom-line meaning and underlying semantics of it.
 
 Inspired by the definition of Gist Inference Score (GIS) by [Wolfe et al. (2019)](https://link.springer.com/content/pdf/10.3758/s13428-019-01284-4.pdf) and implementation of coherence/cohesion indices in [Coh-Metrix](http://cohmetrix.com/), we developed `GisPy`, a tool for measuring GIS in text.
 
