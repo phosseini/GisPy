@@ -4,7 +4,7 @@
   <img src='gispy.png' width='450' height='400' style="vertical-align:middle;margin:100px 50px">
 </p>
 
-#### Notes:
+#### Updates:
 **[06-26-2024]** There was a minor bug in the implementation of `WRDHYPnv` that has now been fixed (thanks to [@amethystant](https://github.com/amethystant)). It is worth considering this update when reproducing the experiments in our paper.
 
 ### What is Gist?
